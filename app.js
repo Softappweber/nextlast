@@ -146,42 +146,53 @@ function setupPairedConnection() {
   
   if (savedCode) {
     addSystemMessage('Found saved connection. Attempting to reconnect...');
-    // Try to use saved code to reconnect
     showCodeInput(savedCode);
   } else {
     // First time - generate code
-    generateConnectionCode();
+    connectionCode = generateRandomCode();
+    showCodeInput(null);
   }
 }
 
-// Generate connection code
-function generateConnectionCode() {
-  connectionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-  
-  addSystemMessage('📋 YOUR CONNECTION CODE: ' + connectionCode);
-  addSystemMessage('Enter this code on your partner\'s device');
-  
-  // Show code input
-  showCodeInput(null);
+// Generate random code
+function generateRandomCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 // Show code input for manual exchange
 function showCodeInput(existingCode) {
+  // Remove any existing code exchange UI first
+  const existingCodeExchange = document.getElementById('codeExchange');
+  if (existingCodeExchange) {
+    existingCodeExchange.remove();
+  }
+  
+  // Generate code if not set
+  if (!connectionCode) {
+    connectionCode = generateRandomCode();
+  }
+  
   const codeInputDiv = document.createElement('div');
   codeInputDiv.className = 'code-exchange';
   codeInputDiv.id = 'codeExchange';
   codeInputDiv.innerHTML = `
     <div style="margin: 15px 0; padding: 15px; background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; border-radius: 8px;">
-      <h3 style="color: #00d4ff; margin-bottom: 10px;">🔑 Connection Code Exchange</h3>
-      ${existingCode ? 
-        `<p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">Saved code found: <strong style="color: #00d4ff;">${existingCode}</strong></p>
-         <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Enter partner's code below or use saved code</p>` :
-        `<p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">Your code: <strong style="color: #00d4ff; font-size: 18px;">${connectionCode}</strong></p>
-         <p style="font-size: 12px; color: #888; margin-bottom: 10px;">1. Tell your partner this code<br>2. Enter their code below</p>`
-      }
-      <input type="text" id="partnerCodeInput" placeholder="Enter partner's code" maxlength="6" 
-             style="width: 100%; padding: 10px; border: 1px solid #00d4ff; border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; text-transform: uppercase; margin-bottom: 10px;">
-      <button id="submitCodeBtn" class="btn-primary" style="padding: 10px;">Connect</button>
+      <h3 style="color: #00d4ff; margin-bottom: 15px; text-align: center;">🔑 Connection Code Exchange</h3>
+      
+      <!-- Your code box - always visible -->
+      <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+        <p style="font-size: 13px; color: #888; margin-bottom: 5px;">YOUR CODE</p>
+        <p style="font-size: 28px; color: #00d4ff; font-weight: bold; letter-spacing: 3px; margin: 5px 0;">${connectionCode}</p>
+        <p style="font-size: 11px; color: #888;">Share this code with your partner</p>
+      </div>
+      
+      <!-- Partner code input -->
+      <div style="margin-bottom: 10px;">
+        <p style="font-size: 13px; color: #ccc; margin-bottom: 8px;">Enter partner's code below:</p>
+        <input type="text" id="partnerCodeInput" placeholder="PARTNER'S CODE" maxlength="6" 
+               style="width: 100%; padding: 12px; border: 2px solid #00d4ff; border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff; font-size: 18px; text-transform: uppercase; text-align: center; letter-spacing: 2px; margin-bottom: 10px; box-sizing: border-box;">
+        <button id="submitCodeBtn" class="btn-primary" style="padding: 12px;">Connect</button>
+      </div>
     </div>
   `;
   
@@ -206,10 +217,8 @@ function showCodeInput(existingCode) {
     // Save partner code
     localStorage.setItem('solods_code_' + partnerId, partnerCode);
     
-    // Remove code exchange UI
-    document.getElementById('codeExchange').remove();
-    
-    addSystemMessage('✅ Codes exchanged! Establishing connection...');
+    addSystemMessage('✅ Partner code received: ' + partnerCode);
+    addSystemMessage('⏳ Waiting for partner to enter your code...');
     
     // Now create offer with code
     createOfferWithCode(partnerCode);
@@ -229,7 +238,6 @@ async function createOfferWithCode(partnerCode) {
     
     await waitForIceGathering();
     
-    // Store offer in a way partner can find using code
     const connectionData = {
       type: 'offer',
       sdp: peerConnection.localDescription,
@@ -244,12 +252,9 @@ async function createOfferWithCode(partnerCode) {
     
     addSystemMessage('⏳ Waiting for partner to connect...');
     
-    // In real P2P without server, we need both devices to exchange codes
-    // For v1, we simulate by storing in localStorage (same device)
-    // For cross-device, we need manual code entry on both sides
-    
   } catch (error) {
     console.error('Create offer error:', error);
+    addSystemMessage('❌ Error creating connection');
   }
 }
 
@@ -280,6 +285,12 @@ function createPeerConnection() {
       connectionStatus.className = 'connected';
       chatStatus.classList.add('connected');
       addSystemMessage('✅ Connected with ' + partnerId + '!');
+      
+      // Remove code exchange UI
+      const codeExchange = document.getElementById('codeExchange');
+      if (codeExchange) {
+        codeExchange.remove();
+      }
     } else if (state === 'failed' || state === 'disconnected') {
       connectionStatus.textContent = '🔴 Disconnected';
       connectionStatus.className = '';
@@ -425,7 +436,8 @@ reconnectBtn.addEventListener('click', () => {
   reconnectBtn.classList.add('hidden');
   createPeerConnection();
   createDataChannel();
-  generateConnectionCode();
+  showCodeInput(null);
 });
 
 console.log('SoloDS NextLast loaded');
+console.log('My ID:', myId || 'Not registered');
