@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoloDS NextLast v5</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #1c1c1e;
+      --surface2: #2c2c2e;
+      --accent: #0a84ff;
+      --accent2: #ff9f0a;
+      --green: #30d158;
+      --red: #ff453a;
+      --text: #ffffff;
+      --text2: #8e8e93;
+      --border: #38383a;
+      --radius: 20px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Phone Frame */
+    .phone {
+      width: 100%;
+      max-width: 390px;
+      background: var(--bg);
+      border-radius: 40px;
+      border: 3px solid #333;
+      box-shadow: 0 0 60px rgba(0,0,0,0.8), inset 0 0 0 2px #000;
+      overflow: hidden;
+      position: relative;
+      min-height: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 25px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    /* Notch */
+    .notch {
+      width: 120px;
+      height: 28px;
+      background: #000;
+      border-radius: 0 0 20px 20px;
+      margin: 0 auto;
+      position: relative;
+      top: -5px;
+    }
+
+    /* App Content */
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px 20px 20px;
+    }
+
+    /* Screens */
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Brand */
+    .brand {
+      text-align: center;
+      margin: 10px 0 20px;
+    }
+
+    .brand h1 {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+
+    .brand h1 span {
+      color: var(--accent);
+    }
+
+    .brand .tagline {
+      color: var(--text2);
+      font-size: 12px;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 0.5px solid var(--border);
+    }
+
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .hint {
+      color: var(--text2);
+      font-size: 13px;
+      margin-bottom: 15px;
+    }
+
+    /* Inputs */
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:active {
+      opacity: 0.7;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-green {
+      background: var(--green);
+      color: #000;
+    }
+
+    .btn-red {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-orange {
+      background: var(--accent2);
+      color: #000;
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* Link Display */
+    .link-display {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 15px;
+      word-break: break-all;
+      font-size: 12px;
+      color: var(--accent2);
+      font-family: 'Courier New', monospace;
+      max-height: 80px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+
+    /* Header */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .app-header .brand h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .user-chip {
+      background: var(--surface2);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .user-chip .arrow {
+      color: var(--accent);
+      margin: 0 5px;
+    }
+
+    /* Status Pill */
+    .status-pill {
+      text-align: center;
+      padding: 10px;
+      background: var(--surface);
+      border-radius: 25px;
+      font-size: 13px;
+      color: var(--text2);
+      border: 1px solid var(--border);
+      margin-bottom: 15px;
+    }
+
+    .status-pill.connected {
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    /* Chat */
+    .messages {
+      height: 280px;
+      overflow-y: auto;
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+
+    .msg {
+      margin-bottom: 8px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      max-width: 80%;
+      font-size: 14px;
+      word-wrap: break-word;
+    }
+
+    .msg.sent {
+      background: var(--accent);
+      color: #fff;
+      margin-left: auto;
+      border-bottom-right-radius: 5px;
+    }
+
+    .msg.received {
+      background: var(--surface2);
+      color: #fff;
+      border-bottom-left-radius: 5px;
+    }
+
+    .msg.system {
+      text-align: center;
+      background: transparent;
+      color: var(--text2);
+      font-size: 12px;
+      max-width: 100%;
+    }
+
+    .msg-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .msg-input-row input {
+      flex: 1;
+      padding: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 25px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .msg-input-row button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Call Area */
+    .call-area {
+      text-align: center;
+      padding: 15px 0;
+    }
+
+    .call-btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .call-btn {
+      padding: 14px 22px;
+      border: none;
+      border-radius: 30px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .call-status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 10px;
+      height: 40px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .divider-text {
+      text-align: center;
+      color: var(--text2);
+      font-size: 13px;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-icons">
+      <span>📶</span>
+      <span>🔋</span>
+    </div>
+  </div>
+  <div class="notch"></div>
+
+  <div class="app-content">
+    
+    <!-- SCREEN 1: Registration -->
+    <div class="screen active" id="screenRegister">
+      <div class="brand">
+        <h1>Solo<span>DS</span></h1>
+        <p class="tagline">NextLast — Private P2P Line</p>
+      </div>
+
+      <div class="card">
+        <h2>Create Your Line</h2>
+        <p class="hint">Register and get your connection link</p>
+
+        <div class="input-group">
+          <label>Your Name</label>
+          <input type="text" id="userName" placeholder="e.g., sushant" maxlength="20">
+        </div>
+
+        <div class="input-group">
+          <label>Partner's Name</label>
+          <input type="text" id="partnerName" placeholder="e.g., rahul" maxlength="20">
+        </div>
+
+        <button class="btn btn-primary" id="createLinkBtn">Create Connection Link</button>
+      </div>
+
+      <div class="card hidden" id="linkCard">
+        <h2>Your Link</h2>
+        <p class="hint">Send this link to your partner</p>
+        <div class="link-display" id="linkDisplay"></div>
+        <button class="btn btn-orange" id="copyLinkBtn">📋 Copy Link</button>
+
+        <div class="divider-text">— OR —</div>
+
+        <div class="input-group">
+          <label>Paste Partner's Link</label>
+          <input type="text" id="partnerLink" placeholder="Paste link here">
+        </div>
+        <button class="btn btn-green" id="connectBtn">Connect</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: Main App -->
+    <div class="screen" id="screenMain">
+      <div class="app-header">
+        <div class="brand">
+          <h1>Solo<span>DS</span></h1>
+        </div>
+        <div class="user-chip">
+          <span id="myNameDisplay"></span>
+          <span class="arrow">↔</span>
+          <span id="partnerNameDisplay"></span>
+        </div>
+      </div>
+
+      <div class="status-pill" id="statusPill">
+        <span id="statusText">🔴 Offline</span>
+      </div>
+
+      <!-- Chat Card -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h2>💬 Messages</h2>
+          <span id="chatDot" style="width:10px;height:10px;border-radius:50%;background:var(--red);display:inline-block;"></span>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="msg-input-row">
+          <input type="text" id="messageInput" placeholder="Type message...">
+          <button id="sendBtn">➤</button>
+        </div>
+      </div>
+
+      <!-- Call Card -->
+      <div class="card">
+        <h2>📞 Voice Call</h2>
+        <div class="call-area">
+          <div class="call-btn-row">
+            <button class="call-btn btn-green" id="startCallBtn">📞 Start Call</button>
+            <button class="call-btn btn-green hidden" id="acceptBtn">✅ Accept</button>
+            <button class="call-btn btn-red hidden" id="rejectBtn">❌ Reject</button>
+            <button class="call-btn btn-red hidden" id="hangupBtn">📞 End Call</button>
+          </div>
+          <p class="call-status" id="callStatus"></p>
+          <audio id="remoteAudio" autoplay class="hidden"></audio>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// SoloDS NextLast v5 - Phone Style + URL Connection
+
+let myName = '';
+let partnerName = '';
+let peerConnection = null;
+let dataChannel = null;
+let localStream = null;
+let remoteStream = null;
+let isInCall = false;
+let myLink = '';
+
+// DOM
+const screenRegister = document.getElementById('screenRegister');
+const screenMain = document.getElementById('screenMain');
+const userNameInput = document.getElementById('userName');
+const partnerNameInput = document.getElementById('partnerName');
+const createLinkBtn = document.getElementById('createLinkBtn');
+const linkCard = document.getElementById('linkCard');
+const linkDisplay = document.getElementById('linkDisplay');
+const copyLinkBtn = document.getElementById('copyLinkBtn');
+const partnerLinkInput = document.getElementById('partnerLink');
+const connectBtn = document.getElementById('connectBtn');
+const myNameDisplay = document.getElementById('myNameDisplay');
+const partnerNameDisplay = document.getElementById('partnerNameDisplay');
+const statusPill = document.getElementById('statusPill');
+const statusText = document.getElementById('statusText');
+const chatDot = document.getElementById('chatDot');
+const messagesEl = document.getElementById('messages');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const startCallBtn = document.getElementById('startCallBtn');
+const acceptBtn = document.getElementById('acceptBtn');
+const rejectBtn = document.getElementById('rejectBtn');
+const hangupBtn = document.getElementById('hangupBtn');
+const callStatus = document.getElementById('callStatus');
+const remoteAudio = document.getElementById('remoteAudio');
+
+// Check if partner link is in URL (when someone clicks a link)
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash;
+  if (hash && hash.length > 1) {
+    // Someone opened a connection link
+    const encoded = hash.substring(1);
+    partnerLinkInput.value = encoded;
+    // Show registration screen
+    screenRegister.classList.add('active');
+    screenMain.classList.remove('active');
+  }
+  
+  // Restore session
+  const saved = localStorage.getItem('solods_v5');
+  if (saved) {
+    const s = JSON.parse(saved);
+    myName = s.myName;
+    partnerName = s.partnerName;
+    showMainScreen();
+  }
+});
+
+// Create Link
+createLinkBtn.addEventListener('click', async () => {
+  const name = userNameInput.value.trim();
+  const pname = partnerNameInput.value.trim();
+  
+  if (!name) {
+    alert('Enter your name');
+    return;
+  }
+  
+  myName = name;
+  partnerName = pname || 'Friend';
+  
+  localStorage.setItem('solods_v5', JSON.stringify({ myName, partnerName }));
+  
+  linkCard.classList.remove('hidden');
+  linkDisplay.textContent = 'CREATING...';
+  
+  await createConnectionLink();
+});
+
+// Create connection link (offer)
+async function createConnectionLink() {
+  try {
+    createPeerConnection();
+    createDataChannel();
+    
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    
+    await waitForIceGathering();
+    
+    const data = JSON.stringify({
+      type: 'offer',
+      sdp: peerConnection.localDescription,
+      from: myName
+    });
+    
+    const encoded = btoa(unescape(encodeURIComponent(data)));
+    
+    // Create link with current URL + hash
+    const baseUrl = window.location.href.split('#')[0];
+    myLink = baseUrl + '#' + encoded;
+    
+    linkDisplay.textContent = myLink;
+    
+  } catch (e) {
+    linkDisplay.textContent = 'ERROR';
+    console.error(e);
+  }
+}
+
+// Copy link
+copyLinkBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(myLink).then(() => {
+    copyLinkBtn.textContent = '✅ Copied!';
+    setTimeout(() => copyLinkBtn.textContent = '📋 Copy Link', 2000);
+  });
+});
+
+// Connect with partner link
+connectBtn.addEventListener('click', async () => {
+  const link = partnerLinkInput.value.trim();
+  
+  if (!link) {
+    alert('Paste partner link');
+    return;
+  }
+  
+  try {
+    // Extract hash
+    let encoded = link;
+    if (link.includes('#')) {
+      encoded = link.split('#')[1];
+    }
+    
+    const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    
+    if (data.type === 'offer') {
+      await handleOffer(data);
+    }
+    
+  } catch (e) {
+    console.error(e);
+    alert('Invalid link');
+  }
+});
+
+// Handle incoming offer (when partner sends link)
+async function handleOffer(data) {
+  try {
+    createPeerConnection();
+    
+    // Set partner name from data
+    if (data.from) {
+      partnerName = data.from;
+    }
+    
+    await peerConnection.setRemoteDescription(data.sdp);
+    
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    
+    await waitForIceGathering();
+    
+    const answerData = JSON.stringify({
+      type: 'answer',
+      sdp: peerConnection.localDescription,
+      from: myName
+    });
+    
+    const encoded = btoa(unescape(encodeURIComponent(answerData)));
+    
+    // Show answer link to send back
+    const baseUrl = window.location.href.split('#')[0];
+    const answerLink = baseUrl + '#' + encoded;
+    
+    // Show the answer link
+    alert('Send this link back to partner:\n\n' + answerLink);
+    
+    showMainScreen();
+    
+  } catch (e) {
+    console.error(e);
+    alert('Connection failed');
+  }
+}
+
+function showMainScreen() {
+  screenRegister.classList.remove('active');
+  screenMain.classList.add('active');
+  myNameDisplay.textContent = myName;
+  partnerNameDisplay.textContent = partnerName;
+  
+  if (!peerConnection) {
+    createPeerConnection();
+    createDataChannel();
+  }
+}
+
+function createPeerConnection() {
+  const config = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  };
+  
+  peerConnection = new RTCPeerConnection(config);
+  
+  peerConnection.onconnectionstatechange = () => {
+    const state = peerConnection.connectionState;
+    
+    if (state === 'connected') {
+      statusPill.classList.add('connected');
+      statusText.textContent = '🟢 Connected';
+      chatDot.style.background = 'var(--green)';
+      addSystemMsg('✅ Connected!');
+    } else if (state === 'failed' || state === 'disconnected') {
+      statusPill.classList.remove('connected');
+      statusText.textContent = '🔴 Disconnected';
+      chatDot.style.background = 'var(--red)';
+    }
+  };
+  
+  peerConnection.ontrack = (event) => {
+    remoteStream = event.streams[0];
+    remoteAudio.srcObject = remoteStream;
+    remoteAudio.classList.remove('hidden');
+    callStatus.textContent = '🔊 Voice connected';
+  };
+  
+  peerConnection.ondatachannel = (event) => {
+    dataChannel = event.channel;
+    setupDataChannel();
+  };
+}
+
+function createDataChannel() {
+  dataChannel = peerConnection.createDataChannel('chat');
+  setupDataChannel();
+}
+
+function setupDataChannel() {
+  dataChannel.onopen = () => {
+    addSystemMsg('💬 Chat ready');
+  };
+  
+  dataChannel.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      handleMessage(data);
+    } catch {
+      addMsg(event.data, 'received');
+    }
+  };
+}
+
+function handleMessage(data) {
+  switch(data.type) {
+    case 'message':
+      addMsg(data.text, 'received');
+      break;
+    case 'call-start':
+      incomingCall();
+      break;
+    case 'call-accept':
+      callStatus.textContent = '✅ Call accepted';
+      break;
+    case 'call-reject':
+      endCall();
+      addSystemMsg('❌ Call rejected');
+      break;
+    case 'call-end':
+      endCall();
+      addSystemMsg('📞 Call ended');
+      break;
+  }
+}
+
+function waitForIceGathering() {
+  return new Promise((resolve) => {
+    if (peerConnection.iceGatheringState === 'complete') {
+      resolve();
+    } else {
+      peerConnection.addEventListener('icegatheringstatechange', () => {
+        if (peerConnection.iceGatheringState === 'complete') resolve();
+      });
+      setTimeout(resolve, 3000);
+    }
+  });
+}
+
+// Messaging
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+function sendMessage() {
+  const text = messageInput.value.trim();
+  if (!text) return;
+  
+  if (dataChannel && dataChannel.readyState === 'open') {
+    dataChannel.send(JSON.stringify({ type: 'message', text }));
+    addMsg(text, 'sent');
+    messageInput.value = '';
+  }
+}
+
+// Voice calls
+startCallBtn.addEventListener('click', async () => {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+    dataChannel.send(JSON.stringify({ type: 'call-start' }));
+    startCallBtn.classList.add('hidden');
+    hangupBtn.classList.remove('hidden');
+    callStatus.textContent = '📞 Calling...';
+    isInCall = true;
+  } catch {
+    alert('Microphone access needed');
+  }
+});
+
+function incomingCall() {
+  startCallBtn.classList.add('hidden');
+  acceptBtn.classList.remove('hidden');
+  rejectBtn.classList.remove('hidden');
+  callStatus.textContent = '📞 ' + partnerName + ' is calling...';
+}
+
+acceptBtn.addEventListener('click', async () => {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+    dataChannel.send(JSON.stringify({ type: 'call-accept' }));
+    acceptBtn.classList.add('hidden');
+    rejectBtn.classList.add('hidden');
+    hangupBtn.classList.remove('hidden');
+    callStatus.textContent = '🔊 Connected';
+    isInCall = true;
+  } catch {
+    alert('Microphone access needed');
+  }
+});
+
+rejectBtn.addEventListener('click', () => {
+  dataChannel.send(JSON.stringify({ type: 'call-reject' }));
+  acceptBtn.classList.add('hidden');
+  rejectBtn.classList.add('hidden');
+  startCallBtn.classList.remove('hidden');
+  callStatus.textContent = '';
+});
+
+hangupBtn.addEventListener('click', () => {
+  dataChannel.send(JSON.stringify({ type: 'call-end' }));
+  endCall();
+});
+
+function endCall() {
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  startCallBtn.classList.remove('hidden');
+  acceptBtn.classList.add('hidden');
+  rejectBtn.classList.add('hidden');
+  hangupBtn.classList.add('hidden');
+  remoteAudio.classList.add('hidden');
+  callStatus.textContent = '';
+  isInCall = false;
+}
+
+function addMsg(text, type) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addSystemMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg system';
+  div.textContent = '🔹 ' + text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+console.log('SoloDS NextLast v5 loaded');
+</script>
+
+</body>
+</html>
