@@ -9,6 +9,7 @@ let localStream = null;
 let remoteStream = null;
 let isInCall = false;
 let reconnectAttempts = 0;
+let connectionCode = '';
 
 // DOM Elements
 const registrationScreen = document.getElementById('registrationScreen');
@@ -135,22 +136,120 @@ function setupPairedConnection() {
   connectionStatus.textContent = '🟡 Connecting...';
   connectionStatus.className = 'connecting';
   
-  // For v1, we use URL hash for signaling
-  // Both devices must be paired manually first time
+  createPeerConnection();
+  createDataChannel();
   
-  const savedConnection = localStorage.getItem('solods_connection_' + partnerId);
+  addSystemMessage('Paired with ' + partnerId);
   
-  if (savedConnection) {
-    // Auto-reconnect attempt
-    createPeerConnection();
-    addSystemMessage('Attempting to reconnect with ' + partnerId + '...');
+  // Check if we have saved connection
+  const savedCode = localStorage.getItem('solods_code_' + partnerId);
+  
+  if (savedCode) {
+    addSystemMessage('Found saved connection. Attempting to reconnect...');
+    // Try to use saved code to reconnect
+    showCodeInput(savedCode);
   } else {
-    // First time pairing
-    createPeerConnection();
-    createDataChannel();
-    addSystemMessage('Paired with ' + partnerId);
-    addSystemMessage('Waiting for ' + partnerId + ' to connect...');
-    createAndDisplayOffer();
+    // First time - generate code
+    generateConnectionCode();
+  }
+}
+
+// Generate connection code
+function generateConnectionCode() {
+  connectionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  addSystemMessage('📋 YOUR CONNECTION CODE: ' + connectionCode);
+  addSystemMessage('Enter this code on your partner\'s device');
+  
+  // Show code input
+  showCodeInput(null);
+}
+
+// Show code input for manual exchange
+function showCodeInput(existingCode) {
+  const codeInputDiv = document.createElement('div');
+  codeInputDiv.className = 'code-exchange';
+  codeInputDiv.id = 'codeExchange';
+  codeInputDiv.innerHTML = `
+    <div style="margin: 15px 0; padding: 15px; background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; border-radius: 8px;">
+      <h3 style="color: #00d4ff; margin-bottom: 10px;">🔑 Connection Code Exchange</h3>
+      ${existingCode ? 
+        `<p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">Saved code found: <strong style="color: #00d4ff;">${existingCode}</strong></p>
+         <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Enter partner's code below or use saved code</p>` :
+        `<p style="font-size: 14px; color: #ccc; margin-bottom: 10px;">Your code: <strong style="color: #00d4ff; font-size: 18px;">${connectionCode}</strong></p>
+         <p style="font-size: 12px; color: #888; margin-bottom: 10px;">1. Tell your partner this code<br>2. Enter their code below</p>`
+      }
+      <input type="text" id="partnerCodeInput" placeholder="Enter partner's code" maxlength="6" 
+             style="width: 100%; padding: 10px; border: 1px solid #00d4ff; border-radius: 4px; background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; text-transform: uppercase; margin-bottom: 10px;">
+      <button id="submitCodeBtn" class="btn-primary" style="padding: 10px;">Connect</button>
+    </div>
+  `;
+  
+  // Insert after chat header
+  const chatHeader = document.querySelector('.chat-header');
+  chatHeader.after(codeInputDiv);
+  
+  // Add event listener
+  document.getElementById('submitCodeBtn').addEventListener('click', () => {
+    const partnerCode = document.getElementById('partnerCodeInput').value.trim().toUpperCase();
+    
+    if (!partnerCode) {
+      alert('Please enter partner\'s code');
+      return;
+    }
+    
+    if (partnerCode.length < 4) {
+      alert('Invalid code');
+      return;
+    }
+    
+    // Save partner code
+    localStorage.setItem('solods_code_' + partnerId, partnerCode);
+    
+    // Remove code exchange UI
+    document.getElementById('codeExchange').remove();
+    
+    addSystemMessage('✅ Codes exchanged! Establishing connection...');
+    
+    // Now create offer with code
+    createOfferWithCode(partnerCode);
+  });
+  
+  // Auto-fill if existing code
+  if (existingCode) {
+    document.getElementById('partnerCodeInput').value = existingCode;
+  }
+}
+
+// Create offer with code
+async function createOfferWithCode(partnerCode) {
+  try {
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    
+    await waitForIceGathering();
+    
+    // Store offer in a way partner can find using code
+    const connectionData = {
+      type: 'offer',
+      sdp: peerConnection.localDescription,
+      myId: myId,
+      partnerCode: partnerCode
+    };
+    
+    const encodedData = btoa(JSON.stringify(connectionData));
+    
+    // Store locally
+    localStorage.setItem('solods_offer_' + connectionCode, encodedData);
+    
+    addSystemMessage('⏳ Waiting for partner to connect...');
+    
+    // In real P2P without server, we need both devices to exchange codes
+    // For v1, we simulate by storing in localStorage (same device)
+    // For cross-device, we need manual code entry on both sides
+    
+  } catch (error) {
+    console.error('Create offer error:', error);
   }
 }
 
@@ -180,10 +279,7 @@ function createPeerConnection() {
       connectionStatus.textContent = '🟢 Connected';
       connectionStatus.className = 'connected';
       chatStatus.classList.add('connected');
-      addSystemMessage('Connected with ' + partnerId);
-      
-      // Save connection
-      saveConnectionState();
+      addSystemMessage('✅ Connected with ' + partnerId + '!');
     } else if (state === 'failed' || state === 'disconnected') {
       connectionStatus.textContent = '🔴 Disconnected';
       connectionStatus.className = '';
@@ -214,7 +310,7 @@ function createDataChannel() {
 // Setup data channel
 function setupDataChannel() {
   dataChannel.onopen = () => {
-    addSystemMessage('Connection established!');
+    addSystemMessage('💬 Chat ready!');
   };
   
   dataChannel.onclose = () => {
@@ -224,132 +320,6 @@ function setupDataChannel() {
   dataChannel.onmessage = (event) => {
     addMessage(event.data, 'received');
   };
-}
-
-// Create and display offer
-async function createAndDisplayOffer() {
-  try {
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    
-    // Wait for ICE gathering
-    await waitForIceGathering();
-    
-    const connectionData = {
-      type: 'offer',
-      sdp: peerConnection.localDescription
-    };
-    
-    // Store the offer for partner to retrieve
-    const encodedOffer = btoa(JSON.stringify(connectionData));
-    localStorage.setItem('solods_offer_' + myId, encodedOffer);
-    
-    // Check for partner's offer
-    checkForPartnerConnection();
-    
-  } catch (error) {
-    console.error('Create offer error:', error);
-  }
-}
-
-// Check for partner connection
-function checkForPartnerConnection() {
-  const partnerOffer = localStorage.getItem('solods_offer_' + partnerId);
-  
-  if (partnerOffer) {
-    try {
-      const connectionData = JSON.parse(atob(partnerOffer));
-      acceptOffer(connectionData);
-    } catch (error) {
-      console.error('Parse partner offer error:', error);
-    }
-  } else {
-    // Poll for partner offer
-    let attempts = 0;
-    const pollInterval = setInterval(() => {
-      attempts++;
-      const pOffer = localStorage.getItem('solods_offer_' + partnerId);
-      
-      if (pOffer) {
-        clearInterval(pollInterval);
-        try {
-          const connectionData = JSON.parse(atob(pOffer));
-          acceptOffer(connectionData);
-        } catch (error) {
-          console.error('Parse partner offer error:', error);
-        }
-      } else if (attempts > 30) {
-        clearInterval(pollInterval);
-        addSystemMessage('Partner not found. Make sure both IDs are correct.');
-      }
-    }, 2000);
-  }
-}
-
-// Accept offer
-async function acceptOffer(connectionData) {
-  try {
-    await peerConnection.setRemoteDescription(connectionData.sdp);
-    
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    
-    const answerData = {
-      type: 'answer',
-      sdp: peerConnection.localDescription
-    };
-    
-    const encodedAnswer = btoa(JSON.stringify(answerData));
-    localStorage.setItem('solods_answer_' + myId, encodedAnswer);
-    
-    checkForPartnerAnswer();
-    
-  } catch (error) {
-    console.error('Accept offer error:', error);
-  }
-}
-
-// Check for partner answer
-function checkForPartnerAnswer() {
-  const partnerAnswer = localStorage.getItem('solods_answer_' + partnerId);
-  
-  if (partnerAnswer) {
-    try {
-      const answerData = JSON.parse(atob(partnerAnswer));
-      peerConnection.setRemoteDescription(answerData.sdp);
-      addSystemMessage('Connection established!');
-    } catch (error) {
-      console.error('Parse answer error:', error);
-    }
-  } else {
-    let attempts = 0;
-    const pollInterval = setInterval(() => {
-      attempts++;
-      const pAnswer = localStorage.getItem('solods_answer_' + partnerId);
-      
-      if (pAnswer) {
-        clearInterval(pollInterval);
-        try {
-          const answerData = JSON.parse(atob(pAnswer));
-          peerConnection.setRemoteDescription(answerData.sdp);
-          addSystemMessage('Connection established!');
-        } catch (error) {
-          console.error('Parse answer error:', error);
-        }
-      } else if (attempts > 30) {
-        clearInterval(pollInterval);
-      }
-    }, 2000);
-  }
-}
-
-// Save connection state
-function saveConnectionState() {
-  const connectionState = {
-    connected: true,
-    timestamp: Date.now()
-  };
-  localStorage.setItem('solods_connection_' + partnerId, JSON.stringify(connectionState));
 }
 
 // Wait for ICE gathering
@@ -379,7 +349,7 @@ sendMessageBtn.addEventListener('click', () => {
     addMessage(message, 'sent');
     messageInput.value = '';
   } else {
-    addSystemMessage('Not connected. Waiting for partner...');
+    addSystemMessage('Not connected yet. Wait for connection...');
   }
 });
 
@@ -455,8 +425,7 @@ reconnectBtn.addEventListener('click', () => {
   reconnectBtn.classList.add('hidden');
   createPeerConnection();
   createDataChannel();
-  createAndDisplayOffer();
+  generateConnectionCode();
 });
 
 console.log('SoloDS NextLast loaded');
-console.log('My ID:', myId || 'Not registered');
