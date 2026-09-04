@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoloDS NextLast - P2P Communication</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Registration Screen -->
+  <div id="registrationScreen" class="screen">
+    <div class="container">
+      <h1 class="logo">Solo<span>DS</span> <small>NextLast</small></h1>
+      <p class="tagline">Your Private Line. No Server. No Middleman.</p>
+      
+      <div class="register-box">
+        <h2>Create Your Private Line</h2>
+        <p class="hint">Choose your unique ID to pair with your friend</p>
+        
+        <div class="input-group">
+          <label for="userId">Your Solo DS ID</label>
+          <input type="text" id="userId" placeholder="e.g., kumaar12" maxlength="20">
+          <small class="error" id="registerError"></small>
+        </div>
+        
+        <div class="input-group">
+          <label for="partnerId">Partner's Solo DS ID (optional)</label>
+          <input type="text" id="partnerId" placeholder="e.g., kumaar22" maxlength="20">
+          <small class="hint">You can add this later if you don't know yet</small>
+        </div>
+        
+        <button id="registerBtn" class="btn-primary">Create My Line</button>
+      </div>
+      
+      <div class="info-box">
+        <h3>How It Works:</h3>
+        <ol>
+          <li>Create your ID</li>
+          <li>Share your ID with your partner</li>
+          <li>Both open SoloDS → Auto-connect</li>
+          <li>Text + Voice calls directly P2P</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main App Screen -->
+  <div id="mainScreen" class="screen hidden">
+    <div class="container">
+      <div class="header">
+        <h1 class="logo">Solo<span>DS</span> <small>NextLast</small></h1>
+        <div class="user-info">
+          <span>My ID:</span>
+          <strong id="myIdDisplay"></strong>
+        </div>
+      </div>
+      
+      <div class="main-content">
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <span id="connectionStatus">🔴 Offline</span>
+          <span id="partnerStatus" class="hidden"></span>
+        </div>
+        
+        <!-- Pairing Panel -->
+        <div class="panel" id="pairingPanel">
+          <h2>Pair Your Line</h2>
+          <p class="hint">Connect with your partner's Solo DS ID</p>
+          
+          <div class="input-group">
+            <label for="partnerIdInput">Partner's ID</label>
+            <input type="text" id="partnerIdInput" placeholder="e.g., kumaar22">
+          </div>
+          
+          <button id="pairBtn" class="btn-primary">Pair Now</button>
+        </div>
+        
+        <!-- Chat Panel -->
+        <div class="panel hidden" id="chatPanel">
+          <div class="chat-header">
+            <h2>Chat with <span id="partnerIdDisplay"></span></h2>
+            <span id="chatStatus" class="status-dot"></span>
+          </div>
+          
+          <div class="chat-messages" id="chatMessages"></div>
+          
+          <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button id="sendMessageBtn" class="btn-primary">Send</button>
+          </div>
+          
+          <div class="call-buttons">
+            <button id="startCallBtn" class="btn-call">📞 Start Voice Call</button>
+            <button id="hangupBtn" class="btn-hangup hidden">📞 End Call</button>
+          </div>
+          
+          <div class="call-status hidden" id="callStatus">
+            <span id="callStatusText"></span>
+          </div>
+          
+          <div class="audio-container hidden" id="audioContainer">
+            <audio id="remoteAudio" autoplay></audio>
+          </div>
+        </div>
+        
+        <!-- Reconnect Button -->
+        <button id="reconnectBtn" class="btn-secondary hidden">🔄 Reconnect</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
