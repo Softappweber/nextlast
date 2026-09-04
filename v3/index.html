@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoloDS NextLast v3</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Registration Screen -->
+  <div id="registrationScreen" class="screen">
+    <div class="container">
+      <div class="brand">
+        <h1>Solo<span>DS</span></h1>
+        <p class="tagline">NextLast — Private P2P Line</p>
+      </div>
+      
+      <div class="card">
+        <h2>Create Your Line</h2>
+        <p class="hint">Register to get your short connection code</p>
+        
+        <div class="input-group">
+          <label>Your Name</label>
+          <input type="text" id="userName" placeholder="e.g., sushant" maxlength="20">
+        </div>
+        
+        <div class="input-group">
+          <label>Partner's Name (optional)</label>
+          <input type="text" id="partnerName" placeholder="e.g., rahul" maxlength="20">
+        </div>
+        
+        <small class="error" id="error"></small>
+        
+        <button id="registerBtn" class="btn-main">Create Code</button>
+      </div>
+      
+      <div class="card hidden" id="codeCard">
+        <h2>Your Connection Code</h2>
+        <p class="hint">Share this code with your partner</p>
+        
+        <div class="code-display" id="codeDisplay">GENERATING...</div>
+        
+        <button id="copyCodeBtn" class="btn-copy">📋 Copy Code</button>
+        
+        <div class="input-group" style="margin-top: 20px;">
+          <label>Enter Partner's Code</label>
+          <input type="text" id="partnerCode" placeholder="Paste partner's code here" maxlength="50" style="text-transform: uppercase;">
+        </div>
+        
+        <button id="connectWithCodeBtn" class="btn-main">Connect</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main App Screen -->
+  <div id="mainScreen" class="screen hidden">
+    <div class="container">
+      <div class="header">
+        <div class="brand">
+          <h1>Solo<span>DS</span></h1>
+        </div>
+        <div class="user-badge">
+          <span id="myNameDisplay"></span>
+          <span class="divider">↔</span>
+          <span id="partnerNameDisplay"></span>
+        </div>
+      </div>
+      
+      <div class="status-pill" id="statusPill">
+        <span id="statusText">🔴 Offline</span>
+      </div>
+      
+      <div class="main-grid">
+        <!-- Chat Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>💬 Messages</h3>
+            <span class="dot" id="chatDot"></span>
+          </div>
+          
+          <div class="messages" id="messages"></div>
+          
+          <div class="msg-input-row">
+            <input type="text" id="messageInput" placeholder="Type message..." maxlength="500">
+            <button id="sendBtn" class="btn-send">Send</button>
+          </div>
+        </div>
+        
+        <!-- Call Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>📞 Voice Call</h3>
+          </div>
+          
+          <div class="call-area">
+            <button id="startCallBtn" class="btn-call">Start Call</button>
+            <button id="acceptBtn" class="btn-accept hidden">Accept</button>
+            <button id="rejectBtn" class="btn-reject hidden">Reject</button>
+            <button id="hangupBtn" class="btn-hangup hidden">End Call</button>
+            
+            <p class="call-status" id="callStatus"></p>
+            
+            <audio id="remoteAudio" autoplay class="hidden"></audio>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
