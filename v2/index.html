@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoloDS NextLast v2 - P2P Communication</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Registration Screen -->
+  <div id="registrationScreen" class="screen">
+    <div class="container">
+      <h1 class="logo">Solo<span>DS</span> <small>NextLast</small></h1>
+      <p class="tagline">Your Private Line. No Server. No Middleman.</p>
+      
+      <div class="register-box">
+        <h2>Connect Your Line</h2>
+        <p class="hint">Enter your ID, partner's ID, and your shared secret code</p>
+        
+        <div class="input-group">
+          <label for="userId">Your ID</label>
+          <input type="text" id="userId" placeholder="e.g., sushant" maxlength="20">
+        </div>
+        
+        <div class="input-group">
+          <label for="partnerId">Partner's ID</label>
+          <input type="text" id="partnerId" placeholder="e.g., rahul" maxlength="20">
+        </div>
+        
+        <div class="input-group">
+          <label for="pairCode">Secret Pair Code</label>
+          <input type="text" id="pairCode" placeholder="e.g., FAMILY" maxlength="20" style="text-transform: uppercase;">
+          <small class="hint">Both devices must use the SAME code</small>
+        </div>
+        
+        <small class="error" id="registerError"></small>
+        
+        <button id="connectBtn" class="btn-primary">Connect</button>
+      </div>
+      
+      <div class="info-box">
+        <h3>How It Works:</h3>
+        <ol>
+          <li>Both decide a secret code (e.g., FAMILY)</li>
+          <li>Both enter: My ID + Partner ID + Same Code</li>
+          <li>Click Connect → They're paired</li>
+          <li>Text + Voice calls directly P2P</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main App Screen -->
+  <div id="mainScreen" class="screen hidden">
+    <div class="container">
+      <div class="header">
+        <h1 class="logo">Solo<span>DS</span> <small>NextLast</small></h1>
+        <div class="user-info">
+          <span>Me:</span>
+          <strong id="myIdDisplay"></strong>
+          <span style="margin: 0 10px;">|</span>
+          <span>Partner:</span>
+          <strong id="partnerIdDisplay"></strong>
+        </div>
+      </div>
+      
+      <div class="status-bar">
+        <span id="connectionStatus">🔴 Offline</span>
+      </div>
+      
+      <div class="main-content">
+        <!-- Chat Panel -->
+        <div class="panel">
+          <div class="chat-header">
+            <h2>💬 Chat</h2>
+            <span id="chatStatus" class="status-dot"></span>
+          </div>
+          
+          <div class="chat-messages" id="chatMessages"></div>
+          
+          <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button id="sendMessageBtn" class="btn-primary">Send</button>
+          </div>
+        </div>
+        
+        <!-- Call Panel -->
+        <div class="panel">
+          <div class="chat-header">
+            <h2>📞 Voice Call</h2>
+          </div>
+          
+          <div class="call-buttons">
+            <button id="startCallBtn" class="btn-call">Start Call</button>
+            <button id="acceptCallBtn" class="btn-accept hidden">Accept Call</button>
+            <button id="rejectCallBtn" class="btn-reject hidden">Reject</button>
+            <button id="hangupBtn" class="btn-hangup hidden">End Call</button>
+          </div>
+          
+          <div class="call-status hidden" id="callStatus">
+            <span id="callStatusText"></span>
+          </div>
+          
+          <div class="audio-container hidden" id="audioContainer">
+            <audio id="remoteAudio" autoplay></audio>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
