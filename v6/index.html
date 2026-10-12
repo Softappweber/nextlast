@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoloDS NextLast - Private P2P</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Screen 1: Registration -->
+  <div id="registrationScreen" class="screen">
+    <div class="container">
+      <h1 class="logo">Solo<span>DS</span> <small>NextLast</small></h1>
+      <p class="tagline">Private P2P Line. No SIM. Just Internet.</p>
+      
+      <div class="register-box">
+        <h2 id="regTitle">Create Your Line</h2>
+        <p class="hint" id="regHint">Enter your name to get started</p>
+        
+        <div class="input-group">
+          <label for="userId">Your Name</label>
+          <input type="text" id="userId" placeholder="e.g., sushant" maxlength="20">
+          <small class="error" id="registerError"></small>
+        </div>
+        
+        <button id="registerBtn" class="btn-primary">Create Connection Link</button>
+      </div>
+      
+      <div class="info-box" id="linkBox" style="display:none;">
+        <h3>📤 Your Connection Link</h3>
+        <p class="hint">Send this link to your partner via WhatsApp/Email/SMS</p>
+        <textarea id="myLinkText" readonly></textarea>
+        <button id="copyLinkBtn" class="btn-secondary">📋 Copy Link</button>
+      </div>
+      
+      <div class="info-box" id="joinBox" style="display:none;">
+        <h3>🔗 Partner Wants to Connect</h3>
+        <p class="hint">Click below to accept and generate your answer link</p>
+        <button id="acceptConnectBtn" class="btn-primary">Accept & Generate Answer Link</button>
+      </div>
+      
+      <div class="info-box" id="answerBox" style="display:none;">
+        <h3>📤 Send This Answer Link Back</h3>
+        <p class="hint">Copy and send this back to your partner</p>
+        <textarea id="answerLinkText" readonly></textarea>
+        <button id="copyAnswerBtn" class="btn-secondary">📋 Copy Answer Link</button>
+      </div>
+      
+      <div class="info-box" id="reconnectBox" style="display:none;">
+        <h3>🔄 Welcome Back</h3>
+        <p class="hint">Reconnecting to your partner...</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 2: Main App -->
+  <div id="mainScreen" class="screen hidden">
+    <div class="container">
+      <div class="header">
+        <h1 class="logo">Solo<span>DS</span> <small>NextLast</small></h1>
+        <div class="user-info">
+          <span id="myNameDisplay"></span>
+          <span style="color:#00d4ff; margin: 0 8px;">↔</span>
+          <span id="partnerNameDisplay"></span>
+        </div>
+      </div>
+      
+      <div class="status-bar">
+        <span id="connectionStatus">🔴 Offline</span>
+      </div>
+      
+      <div class="panel" id="chatPanel">
+        <div class="chat-header">
+          <h2>💬 Messages</h2>
+          <span id="chatStatus" class="status-dot"></span>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages"></div>
+        
+        <div class="chat-input">
+          <input type="text" id="messageInput" placeholder="Type a message...">
+          <button id="sendMessageBtn" class="btn-primary">Send</button>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="chat-header">
+          <h2>📞 Voice Call</h2>
+        </div>
+        
+        <div class="call-buttons">
+          <button id="startCallBtn" class="btn-call">📞 Start Call</button>
+          <button id="acceptCallBtn" class="btn-call hidden">✅ Accept</button>
+          <button id="rejectCallBtn" class="btn-hangup hidden">❌ Reject</button>
+          <button id="hangupBtn" class="btn-hangup hidden">📞 End Call</button>
+        </div>
+        
+        <div class="call-status hidden" id="callStatus">
+          <span id="callStatusText"></span>
+        </div>
+        
+        <div class="audio-container hidden" id="audioContainer">
+          <audio id="remoteAudio" autoplay></audio>
+        </div>
+      </div>
+      
+      <button id="resetBtn" class="btn-secondary" style="margin-top:10px;">🔄 Reset & Pair New</button>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
