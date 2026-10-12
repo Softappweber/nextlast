@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SoloDS NextLast</title>
+  <meta name="theme-color" content="#06060a">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="midnight">
+  
+  <div class="noise"></div>
+  <div class="aurora aurora-1"></div>
+  <div class="aurora aurora-2"></div>
+  <div class="aurora aurora-3"></div>
+  
+  <!-- ========== HOME SCREEN ========== -->
+  <div id="homeScreen" class="screen">
+    <div class="container">
+      
+      <div class="top-bar">
+        <div class="theme-btn" id="themeBtnHome" title="Change theme">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="hero">
+        <div class="logo-badge">
+          <div class="logo-inner">
+            <svg viewBox="0 0 24 24" fill="none">
+              <defs>
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="var(--accent-1)"/>
+                  <stop offset="100%" stop-color="var(--accent-2)"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#grad1)" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="url(#grad1)" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="url(#grad1)" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="logo-pulse"></div>
+        </div>
+        
+        <h1 class="brand">
+          <span class="brand-text">Solo</span><span class="brand-accent">DS</span>
+        </h1>
+        <div class="brand-tag">
+          <span class="tag-line"></span>
+          <span class="tag-text">NEXTLAST</span>
+          <span class="tag-line"></span>
+        </div>
+      </div>
+      
+      <div class="contacts-section">
+        <div class="contacts-header">
+          <h2>Your Contacts</h2>
+          <button id="addContactBtn" class="btn-add">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            New
+          </button>
+        </div>
+        
+        <div class="contacts-list" id="contactsList"></div>
+        
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">📇</div>
+          <h3>No contacts yet</h3>
+          <p>Add your first contact to start connecting</p>
+        </div>
+      </div>
+      
+      <div class="footer">
+        <div class="footer-line"></div>
+        <span>ENCRYPTED · PEER TO PEER</span>
+        <div class="footer-line"></div>
+      </div>
+      
+    </div>
+  </div>
+  
+  <!-- ========== NEW CONNECTION SCREEN ========== -->
+  <div id="landingScreen" class="screen hidden">
+    <div class="container">
+      
+      <div class="app-nav-top">
+        <button id="backHomeBtn" class="icon-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <h1 class="app-title">New Connection</h1>
+        <div style="width: 40px;"></div>
+      </div>
+      
+      <div class="status-banner" id="statusBanner">
+        <span class="status-dot"></span>
+        <span id="statusMessage">Enter your name to begin</span>
+      </div>
+      
+      <!-- Step 1 -->
+      <div class="card">
+        <div class="card-glow"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <div class="step-badge">01</div>
+            <div>
+              <h2>Generate Code</h2>
+              <p class="card-sub">Share with your partner</p>
+            </div>
+          </div>
+          
+          <div class="input-wrap">
+            <input type="text" id="userName" placeholder=" " maxlength="20" autocomplete="off">
+            <label for="userName">Your Name</label>
+          </div>
+          
+          <button id="createCodeBtn" class="btn-primary">
+            <span>Generate Connection Code</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          
+          <div class="code-area hidden" id="codeArea">
+            <div class="code-label">
+              <span class="dot-live"></span>
+              YOUR CODE — SEND TO PARTNER
+            </div>
+            <div class="code-value" id="myCodeDisplay"></div>
+            
+            <div class="instruction-box">
+              <p class="instruction-title">📋 How to share:</p>
+              <p class="instruction-text">1. Click <b>Share via Paste</b> below<br>
+              2. Code is auto-copied — paste on the site (Ctrl+V)<br>
+              3. Create paste → get short URL → send to partner</p>
+            </div>
+            
+            <div class="btn-row">
+              <button id="copyCodeBtn" class="btn-copy">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Copy
+              </button>
+              <button id="shareCodeBtn" class="btn-copy btn-share">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Share via Paste
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 2 -->
+      <div class="card">
+        <div class="card-glow"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <div class="step-badge">02</div>
+            <div>
+              <h2>Partner's Code</h2>
+              <p class="card-sub">Paste code from partner</p>
+            </div>
+          </div>
+          
+          <div class="input-wrap">
+            <input type="text" id="partnerCodeInput" placeholder=" " autocomplete="off">
+            <label for="partnerCodeInput">Partner's Code</label>
+          </div>
+          
+          <button id="connectBtn" class="btn-primary">
+            <span>Generate Answer Code</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          
+          <div class="code-area hidden" id="answerArea">
+            <div class="code-label">
+              <span class="dot-live orange"></span>
+              YOUR ANSWER CODE — SEND BACK
+            </div>
+            <div class="code-value" id="myAnswerDisplay"></div>
+            
+            <div class="btn-row">
+              <button id="copyAnswerBtn" class="btn-copy">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Copy
+              </button>
+              <button id="shareAnswerBtn" class="btn-copy btn-share">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Share via Paste
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Step 3 -->
+      <div class="card">
+        <div class="card-glow"></div>
+        <div class="card-content">
+          <div class="card-header">
+            <div class="step-badge">03</div>
+            <div>
+              <h2>Complete Connection</h2>
+              <p class="card-sub">Paste partner's answer code</p>
+            </div>
+          </div>
+          
+          <div class="input-wrap">
+            <input type="text" id="answerCodeInput" placeholder=" " autocomplete="off">
+            <label for="answerCodeInput">Answer Code</label>
+          </div>
+          
+          <button id="finishBtn" class="btn-primary">
+            <span>Complete Connection</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12L10 17L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="error-toast hidden" id="errorBox"></div>
+      
+    </div>
+  </div>
+  
+  <!-- ========== CONNECTING SCREEN ========== -->
+  <div id="connectingScreen" class="screen hidden">
+    <div class="container">
+      <div class="connecting-box">
+        <div class="connecting-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+        </div>
+        <h2 class="connecting-title">Establishing Connection</h2>
+        <p class="connecting-sub">Negotiating with peer...</p>
+        <div class="connecting-steps">
+          <div class="conn-step" data-step="1">
+            <span class="step-check">○</span>
+            <span>Local offer created</span>
+          </div>
+          <div class="conn-step" data-step="2">
+            <span class="step-check">○</span>
+            <span>Answer received</span>
+          </div>
+          <div class="conn-step" data-step="3">
+            <span class="step-check">○</span>
+            <span>ICE candidates exchanged</span>
+          </div>
+          <div class="conn-step" data-step="4">
+            <span class="step-check">○</span>
+            <span>Data channel open</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ========== MAIN APP SCREEN ========== -->
+  <div id="mainScreen" class="screen hidden">
+    <div class="app-container">
+      
+      <!-- Top bar -->
+      <div class="main-topbar">
+        <div class="main-topbar-left">
+          <button id="backBtn" class="icon-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="app-brand">
+            <span class="dot-live"></span>
+            <h1><span>Solo</span><span class="accent">DS</span></h1>
+          </div>
+        </div>
+        
+        <div class="main-topbar-center">
+          <div class="status-pill" id="connPill">
+            <span class="pulse-dot"></span>
+            <span id="connText">Connecting</span>
+          </div>
+        </div>
+        
+        <div class="main-topbar-right">
+          <div class="theme-btn theme-btn-mini" id="themeBtnMain" title="Change theme">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <button id="menuBtn" class="icon-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Partner hero -->
+      <div class="partner-hero">
+        <div class="partner-glow"></div>
+        <div class="partner-avatar" id="partnerAvatar">?</div>
+        <div class="partner-meta">
+          <p class="partner-label">Connected with</p>
+          <h2 class="partner-name" id="partnerNameDisplay">—</h2>
+        </div>
+        <div class="partner-signal">
+          <div class="signal-bar"></div>
+          <div class="signal-bar"></div>
+          <div class="signal-bar"></div>
+          <div class="signal-bar"></div>
+        </div>
+      </div>
+      
+      <!-- MAIN 3-WINDOW GRID (PC) / TABS (Mobile) -->
+      <div class="main-grid">
+        
+        <!-- CHAT PANEL -->
+        <div class="panel panel-chat" data-panel="chat">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon">💬</span>
+              <span>Messages</span>
+            </div>
+            <span class="chip" id="chatChip">—</span>
+          </div>
+          
+          <div class="chat-messages" id="chatMessages"></div>
+          
+          <div class="chat-input-row">
+            <button id="attachBtn" class="attach-btn" title="Send file">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <input type="text" id="messageInput" placeholder="Type message..." autocomplete="off">
+            <button id="sendMessageBtn" class="send-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          
+          <input type="file" id="fileInput" style="display:none;">
+        </div>
+        
+        <!-- VOICE PANEL -->
+        <div class="panel panel-voice" data-panel="voice">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon">📞</span>
+              <span>Voice Call</span>
+            </div>
+            <span class="chip">P2P</span>
+          </div>
+          
+          <div class="call-content">
+            <!-- Idle -->
+            <div class="call-buttons" id="callButtonsIdle">
+              <button id="startCallBtn" class="call-main">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Start Voice Call</span>
+              </button>
+            </div>
+            
+            <!-- Incoming -->
+            <div class="call-buttons hidden" id="callButtonsIncoming">
+              <button id="acceptCallBtn" class="call-accept">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Accept
+              </button>
+              <button id="rejectCallBtn" class="call-reject">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(135 12 12)"/>
+                </svg>
+                Reject
+              </button>
+            </div>
+            
+            <!-- Active -->
+            <div class="call-active hidden" id="callActive">
+              <div class="call-timer" id="callTimer">00:00</div>
+              <div class="call-active-buttons">
+                <button id="muteMicBtn" class="ctrl-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span>Mute</span>
+                </button>
+                <button id="hangupBtn" class="ctrl-btn danger">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(135 12 12)"/>
+                  </svg>
+                  <span>End</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="call-status hidden" id="callStatus">
+              <div class="ring-animation"></div>
+              <span id="callStatusText">Ringing...</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- VIDEO PANEL -->
+        <div class="panel panel-video" data-panel="video">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon">📹</span>
+              <span>Video</span>
+            </div>
+            <button id="toggleVideoBtn" class="video-toggle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Turn On</span>
+            </button>
+          </div>
+          
+          <div class="video-wrapper">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay playsinline muted></video>
+            
+            <div class="video-offline" id="videoOffline">
+              <div class="video-offline-icon">📹</div>
+              <p>Video is off</p>
+              <p class="video-offline-sub">Tap "Turn On" to enable your camera</p>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- MOBILE TABS (only visible on mobile) -->
+      <div class="mobile-tabs">
+        <button class="mobile-tab active" data-tab="chat">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+          <span>Chat</span>
+        </button>
+        <button class="mobile-tab" data-tab="voice">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Call</span>
+        </button>
+        <button class="mobile-tab" data-tab="video">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Video</span>
+        </button>
+      </div>
+      
+      <!-- Menu -->
+      <div class="menu-sheet hidden" id="menuDropdown">
+        <button id="resetBtn" class="menu-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M3 12a9 9 0 009 9 9.75 9.75 0 006.74-2.74L21 16M21 3v5h-5M3 21v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Disconnect</span>
+        </button>
+      </div>
+      
+    </div>
+  </div>
+  
+  <!-- Hidden audio -->
+  <audio id="remoteAudio" autoplay></audio>
+  
+  <!-- ========== SAVE CONTACT MODAL ========== -->
+  <div class="modal-overlay hidden" id="saveContactModal">
+    <div class="modal-box">
+      <h2>Save Contact</h2>
+      <p class="modal-sub">Save this contact for quick access</p>
+      <div class="input-wrap">
+        <input type="text" id="saveContactName" placeholder=" " maxlength="30" autocomplete="off">
+        <label for="saveContactName">Contact Name</label>
+      </div>
+      <div class="input-wrap">
+        <input type="text" id="saveContactPaste" placeholder=" " maxlength="200" autocomplete="off">
+        <label for="saveContactPaste">Paste URL (optional)</label>
+      </div>
+      <p class="modal-hint">💡 Save the pastebin URL so next time you can find the code fast</p>
+      <div class="modal-actions">
+        <button id="skipSaveBtn" class="btn-secondary">Skip</button>
+        <button id="saveContactBtn" class="btn-primary">
+          <span>Save Contact</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ========== THEME PICKER MODAL ========== -->
+  <div class="modal-overlay hidden" id="themeModal">
+    <div class="modal-box modal-theme">
+      <h2>Choose Theme</h2>
+      <p class="modal-sub">Pick your vibe</p>
+      
+      <div class="theme-grid">
+        <button class="theme-option" data-theme-choice="midnight">
+          <div class="theme-preview theme-prev-midnight">
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+          </div>
+          <span>Midnight</span>
+        </button>
+        <button class="theme-option" data-theme-choice="daylight">
+          <div class="theme-preview theme-prev-daylight">
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+          </div>
+          <span>Daylight</span>
+        </button>
+        <button class="theme-option" data-theme-choice="ocean">
+          <div class="theme-preview theme-prev-ocean">
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+          </div>
+          <span>Ocean</span>
+        </button>
+        <button class="theme-option" data-theme-choice="sunset">
+          <div class="theme-preview theme-prev-sunset">
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+          </div>
+          <span>Sunset</span>
+        </button>
+        <button class="theme-option" data-theme-choice="forest">
+          <div class="theme-preview theme-prev-forest">
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+            <div class="theme-prev-dot"></div>
+          </div>
+          <span>Forest</span>
+        </button>
+      </div>
+      
+      <button class="btn-secondary" id="closeThemeModal" style="margin-top: 16px; width: 100%;">Close</button>
+    </div>
+  </div>
+  
+  <!-- ========== PASTE BOTTOM SHEET ========== -->
+  <div class="sheet-overlay hidden" id="pasteSheetOverlay">
+    <div class="paste-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h3>📤 Share via Paste</h3>
+        <p class="sheet-sub">✅ Code copied to clipboard. Pick a paste service:</p>
+      </div>
+      
+      <div class="sheet-options">
+        <button class="sheet-option" data-site="rentry">
+          <div class="sheet-opt-icon">📝</div>
+          <div class="sheet-opt-info">
+            <span class="sheet-opt-name">Rentry.co</span>
+            <span class="sheet-opt-desc">No expiry · Custom URL · Recommended</span>
+          </div>
+          <svg class="sheet-opt-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        
+        <button class="sheet-option" data-site="dpaste">
+          <div class="sheet-opt-icon">⚡</div>
+          <div class="sheet-opt-info">
+            <span class="sheet-opt-name">dpaste.org</span>
+            <span class="sheet-opt-desc">1 week expiry · Fast</span>
+          </div>
+          <svg class="sheet-opt-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        
+        <button class="sheet-option" data-site="binpaste">
+          <div class="sheet-opt-icon">🎨</div>
+          <div class="sheet-opt-info">
+            <span class="sheet-opt-name">BinPaste.xyz</span>
+            <span class="sheet-opt-desc">Custom name · Clean UI</span>
+          </div>
+          <svg class="sheet-opt-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        
+        <button class="sheet-option" data-site="justpaste">
+          <div class="sheet-opt-icon">🔒</div>
+          <div class="sheet-opt-info">
+            <span class="sheet-opt-name">JustPaste.it</span>
+            <span class="sheet-opt-desc">Anonymous · No login</span>
+          </div>
+          <svg class="sheet-opt-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="sheet-instructions">
+        <p>📋 Steps:</p>
+        <ol>
+          <li><b>Paste</b> on the site (Ctrl+V / Cmd+V)</li>
+          <li>Click <b>Create</b> / <b>Save</b></li>
+          <li>Copy the URL and send to partner</li>
+        </ol>
+      </div>
+      
+      <button class="sheet-cancel" id="closePasteSheet">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- ========== TOAST ========== -->
+  <div class="toast-container" id="toastContainer"></div>
+  
+  <!-- ========== IMAGE/VIDEO PREVIEW ========== -->
+  <div class="preview-overlay hidden" id="previewOverlay">
+    <button class="preview-close" id="previewClose">✕</button>
+    <div class="preview-content" id="previewContent"></div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
