@@ -27,12 +27,13 @@ let currentTheme = 'midnight';
 
 // Public link state
 let myPublicSlug = '';
-let myPublicPeer = null;           // PeerJS instance for "always-online" mode
+let myPublicPeer = null;
 let isOnline = false;
-let incomingPeerCall = null;       // Incoming PeerJS connection
-let isCallerMode = false;          // True if we're the caller (opened someone's link)
-let callerTargetName = '';         // Name of person we're calling
-let callerTargetSlug = '';         // Slug of person we're calling
+let incomingPeerCall = null;
+let isCallerMode = false;
+let callerTargetName = '';
+let callerTargetSlug = '';
+let callerPeer = null;
 
 // File transfer state
 let incomingFileChunks = [];
@@ -147,7 +148,7 @@ const callerName = document.getElementById('callerName');
 const callerStatus = document.getElementById('callerStatus');
 const callerCallBtn = document.getElementById('callerCallBtn');
 const callerVideoBtn = document.getElementById('callerVideoBtn');
-const callerTargetName = document.getElementById('callerTargetName');
+const callerTargetNameEl = document.getElementById('callerTargetName');
 const callerCancelBtn = document.getElementById('callerCancelBtn');
 
 // Incoming call modal
@@ -229,11 +230,10 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ============================================================
-   PUBLIC LINK HANDLING — ENTRY POINT
+   PUBLIC LINK ENTRY
    ============================================================ */
 
 function checkPublicLinkInURL() {
-  // Check if URL has ?call=slug or #call=slug
   const params = new URLSearchParams(window.location.search);
   const hash = window.location.hash;
   
@@ -244,7 +244,6 @@ function checkPublicLinkInURL() {
   }
   
   if (targetSlug) {
-    // Someone opened a public link — enter caller mode
     enterCallerMode(targetSlug);
   }
 }
@@ -255,16 +254,13 @@ function checkPublicLinkInURL() {
 
 goOnlineBtn.addEventListener('click', async () => {
   if (isOnline) {
-    // Go offline
     goOffline();
   } else {
-    // Go online
     await goOnline();
   }
 });
 
 async function goOnline() {
-  // Get or ask for user's name
   let name = localStorage.getItem('solods_myname');
   
   if (!name) {
@@ -284,7 +280,6 @@ async function goOnline() {
   goOnlineBtn.querySelector('span').textContent = 'Connecting...';
   
   try {
-    // Create PeerJS instance with our slug as ID
     const peerId = 'solods-' + myPublicSlug;
     
     myPublicPeer = new Peer(peerId, {
@@ -305,7 +300,6 @@ async function goOnline() {
       goOnlineBtn.querySelector('span').textContent = 'Go Offline';
       goOnlineBtn.classList.add('offline-btn');
       
-      // Show link card
       const publicUrl = getPublicUrl(myPublicSlug);
       myPublicLink.textContent = publicUrl;
       linkCard.classList.remove('hidden');
@@ -314,14 +308,12 @@ async function goOnline() {
     });
     
     myPublicPeer.on('call', (call) => {
-      // Someone is calling us!
       incomingPeerCall = call;
       showIncomingCallModal(call.metadata?.name || 'Someone');
       startRingtone();
     });
     
     myPublicPeer.on('connection', (conn) => {
-      // Someone is connecting (chat)
       dataChannel = conn;
       setupPeerDataChannel();
     });
@@ -344,7 +336,6 @@ async function goOnline() {
     });
     
     myPublicPeer.on('disconnected', () => {
-      console.log('PeerJS disconnected — trying to reconnect');
       setTimeout(() => {
         if (myPublicPeer && !myPublicPeer.destroyed) {
           myPublicPeer.reconnect();
@@ -371,8 +362,6 @@ function goOffline() {
   goOnlineBtn.disabled = false;
   goOnlineBtn.querySelector('span').textContent = 'Go Online';
   goOnlineBtn.classList.remove('offline-btn');
-  
-  // Hide link card
   linkCard.classList.add('hidden');
 }
 
@@ -430,17 +419,14 @@ sharePublicLink.addEventListener('click', async () => {
 });
 
 /* ============================================================
-   CALLER MODE — Someone opened YOUR public link (they're calling YOU)
+   CALLER MODE
    ============================================================ */
-
-let callerPeer = null;
 
 function enterCallerMode(targetSlug) {
   isCallerMode = true;
   callerTargetSlug = targetSlug;
   callerTargetName = targetSlug;
   
-  // Hide all screens, show caller screen
   homeScreen.classList.add('hidden');
   landingScreen.classList.add('hidden');
   connectingScreen.classList.add('hidden');
@@ -449,10 +435,9 @@ function enterCallerMode(targetSlug) {
   
   callerAvatar.textContent = targetSlug.charAt(0).toUpperCase();
   callerName.textContent = targetSlug;
-  callerTargetName.textContent = targetSlug;
+  callerTargetNameEl.textContent = targetSlug;
   callerStatus.textContent = 'Connecting...';
   
-  // Create caller PeerJS instance
   const callerId = 'solods-caller-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
   
   callerPeer = new Peer(callerId, {
@@ -501,11 +486,8 @@ async function startCallAsCaller(withVideo) {
       video: withVideo ? { width: 640, height: 480 } : false
     });
     
-    if (withVideo) {
-      videoEnabled = true;
-    }
+    if (withVideo) videoEnabled = true;
     
-    // Mute audio by default until connected
     localStream.getAudioTracks().forEach(t => { t.enabled = false; });
     
     callerStatus.textContent = 'Calling ' + callerTargetName + '...';
@@ -533,7 +515,6 @@ async function startCallAsCaller(withVideo) {
         videoOffline.classList.add('hidden');
       }
       
-      // Switch to main screen
       callerScreen.classList.add('hidden');
       mainScreen.classList.remove('hidden');
       
@@ -541,7 +522,6 @@ async function startCallAsCaller(withVideo) {
       partnerNameDisplay.textContent = partnerName;
       partnerAvatar.textContent = partnerName.charAt(0).toUpperCase();
       
-      // Unmute audio now
       if (localStream) {
         localStream.getAudioTracks().forEach(t => t.enabled = true);
       }
@@ -586,7 +566,7 @@ callerCancelBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
-   INCOMING CALL (You're online, someone called you)
+   INCOMING CALL MODAL
    ============================================================ */
 
 function showIncomingCallModal(callerNameText) {
@@ -620,7 +600,6 @@ incomingAcceptBtn.addEventListener('click', async () => {
         videoOffline.classList.add('hidden');
       }
       
-      // Show main screen
       homeScreen.classList.add('hidden');
       mainScreen.classList.remove('hidden');
       
@@ -634,11 +613,11 @@ incomingAcceptBtn.addEventListener('click', async () => {
     
     incomingPeerCall.on('close', () => {
       endCall(true);
-      showHome();
-      // Go back online
       if (isOnline) {
         homeScreen.classList.remove('hidden');
         mainScreen.classList.add('hidden');
+      } else {
+        showHome();
       }
     });
     
@@ -659,7 +638,7 @@ incomingRejectBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
-   PEERJS DATA CHANNEL (for chat)
+   PEERJS DATA CHANNEL
    ============================================================ */
 
 function setupPeerDataChannel() {
@@ -726,7 +705,7 @@ function loadContacts() {
       <div class="contact-avatar">${(contact.name || '?').charAt(0).toUpperCase()}</div>
       <div class="contact-info">
         <div class="contact-name">${escapeHtml(contact.name)}</div>
-        <div class="contact-meta">${contact.pasteUrl ? escapeHtml(contact.pasteUrl) : formatTime(contact.lastConnected)}</div>
+        <div class="contact-meta">${contact.slug ? '@' + escapeHtml(contact.slug) : (contact.pasteUrl ? escapeHtml(contact.pasteUrl) : formatTime(contact.lastConnected))}</div>
       </div>
       <svg class="contact-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -756,13 +735,11 @@ function escapeHtml(text) {
 }
 
 function connectToContact(contact) {
-  // If contact has a public slug, open caller mode directly
   if (contact.slug) {
     enterCallerMode(contact.slug);
     return;
   }
   
-  // Otherwise use code exchange
   partnerName = contact.name;
   isSavedPartner = true;
   myName = contact.myName || 'me';
@@ -953,7 +930,7 @@ document.querySelectorAll('.sheet-option').forEach(btn => {
 });
 
 /* ============================================================
-   STEP 1: GENERATE CODE (Manual exchange)
+   STEP 1: GENERATE CODE
    ============================================================ */
 
 createCodeBtn.addEventListener('click', async () => {
@@ -1089,7 +1066,7 @@ finishBtn.addEventListener('click', async () => {
 });
 
 /* ============================================================
-   WEBRTC PEER CONNECTION (Manual exchange path)
+   WEBRTC PEER CONNECTION
    ============================================================ */
 
 function createPeerConnection() {
@@ -1298,16 +1275,11 @@ function sendMessage() {
   const text = messageInput.value.trim();
   if (!text) return;
   
-  const payload = JSON.stringify({ type: 'message', text });
-  
-  // Try data channel (manual path)
   if (dataChannel && dataChannel.readyState === 'open') {
-    dataChannel.send(payload);
+    dataChannel.send(JSON.stringify({ type: 'message', text }));
     addMessage(text, 'sent');
     messageInput.value = '';
-  }
-  // Try PeerJS data channel (public link path)
-  else if (sendViaDataChannel({ type: 'message', text })) {
+  } else if (sendViaDataChannel({ type: 'message', text })) {
     addMessage(text, 'sent');
     messageInput.value = '';
   } else {
@@ -1344,22 +1316,22 @@ fileInput.addEventListener('change', (e) => {
 });
 
 async function sendFile(file) {
-  const dc = dataChannel || (myPublicPeer && dataChannel);
-  if (!dc) { showToast('Not connected', 'error'); return; }
-  
   if (file.size > MAX_FILE_SIZE) {
     showToast('File too large (max 500MB)', 'error');
     return;
   }
   
+  const payloadStart = JSON.stringify({
+    type: 'file-start', name: file.name, size: file.size, mimeType: file.type
+  });
+  
+  if (!(dataChannel?.readyState === 'open') && !sendViaDataChannel(payloadStart)) {
+    showToast('Not connected', 'error');
+    return;
+  }
+  
   try {
-    const payloadStart = JSON.stringify({
-      type: 'file-start', name: file.name, size: file.size, mimeType: file.type
-    });
-    
     if (dataChannel?.readyState === 'open') dataChannel.send(payloadStart);
-    else if (dc.send) dc.send(payloadStart);
-    
     await new Promise(r => setTimeout(r, 200));
     
     const arrayBuffer = await file.arrayBuffer();
@@ -1389,7 +1361,7 @@ async function sendFile(file) {
       });
       
       if (dataChannel?.readyState === 'open') dataChannel.send(chunkPayload);
-      else if (dc.send) dc.send(chunkPayload);
+      else sendViaDataChannel(chunkPayload);
       
       offset += CHUNK_SIZE;
       chunkIndex++;
@@ -1405,7 +1377,7 @@ async function sendFile(file) {
     });
     
     if (dataChannel?.readyState === 'open') dataChannel.send(endPayload);
-    else if (dc.send) dc.send(endPayload);
+    else sendViaDataChannel(endPayload);
     
     if (progressSpan) progressSpan.textContent = 'Sent ✓';
     showToast('File sent: ' + file.name, 'success');
@@ -1752,7 +1724,6 @@ toggleVideoBtn.addEventListener('click', async () => {
 
 shareScreenBtn.addEventListener('click', async () => {
   if (isScreenSharing) {
-    // Stop
     if (screenStream) {
       screenStream.getTracks().forEach(t => t.stop());
       screenStream = null;
@@ -1771,7 +1742,6 @@ shareScreenBtn.addEventListener('click', async () => {
     
     const screenTrack = screenStream.getVideoTracks()[0];
     
-    // Replace video track in peer connection
     if (peerConnection) {
       const senders = peerConnection.getSenders();
       const videoSender = senders.find(s => s.track && s.track.kind === 'video');
@@ -1783,12 +1753,10 @@ shareScreenBtn.addEventListener('click', async () => {
       }
     }
     
-    // Show locally
     localVideo.srcObject = screenStream;
     isScreenSharing = true;
     shareScreenBtn.classList.add('active');
     
-    // Handle when user stops sharing via browser UI
     screenTrack.onended = () => {
       isScreenSharing = false;
       shareScreenBtn.classList.remove('active');
@@ -1855,4 +1823,3 @@ function cleanup() {
 }
 
 console.log('SoloDS NextLast v15 loaded');
-console.log('🌐 Public link mode enabled with PeerJS signaling');
