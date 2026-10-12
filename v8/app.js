@@ -1,4 +1,4 @@
-// SoloDS NextLast v8 - Modern UI + Code Exchange + Voice
+// SoloDS NextLast v8 - Fixed Code Exchange
 
 let myName = '';
 let partnerName = '';
@@ -60,12 +60,6 @@ window.addEventListener('DOMContentLoaded', () => {
       userNameInput.value = myName;
     } catch {}
   }
-  
-  // Handle URL hash (backward compat)
-  const hash = window.location.hash;
-  if (hash && hash.length > 1) {
-    partnerCodeInput.value = decodeURIComponent(hash.substring(1));
-  }
 });
 
 function showError(msg) {
@@ -90,7 +84,6 @@ createCodeBtn.addEventListener('click', async () => {
   createCodeBtn.querySelector('span').textContent = 'Requesting mic...';
   
   try {
-    // Ask mic permission first
     localStream = await navigator.mediaDevices.getUserMedia({ 
       audio: { 
         echoCancellation: true, 
@@ -103,7 +96,6 @@ createCodeBtn.addEventListener('click', async () => {
     
     createPeerConnection();
     
-    // Add audio tracks BEFORE creating offer
     localStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localStream);
     });
@@ -122,10 +114,11 @@ createCodeBtn.addEventListener('click', async () => {
     
     myCode = encode(offerData);
     
-    // Show code
     myCodeDisplay.textContent = myCode;
     shareCard.classList.remove('hidden');
     joinCard.classList.remove('hidden');
+    finishCard.classList.remove('hidden');  // ← FIX: Show finish card too
+    
     createCodeBtn.disabled = false;
     createCodeBtn.querySelector('span').textContent = 'Generate Connection Code';
     
@@ -145,7 +138,7 @@ createCodeBtn.addEventListener('click', async () => {
 });
 
 copyCodeBtn.addEventListener('click', () => {
-  copyToClipboard(myCode, copyCodeBtn, 'Copy Code');
+  copyToClipboard(myCode, copyCodeBtn);
 });
 
 // ==================
@@ -172,7 +165,6 @@ connectBtn.addEventListener('click', async () => {
     partnerName = data.from || 'Partner';
     pendingOffer = data;
     
-    // Ask mic permission
     localStream = await navigator.mediaDevices.getUserMedia({ 
       audio: { echoCancellation: true, noiseSuppression: true } 
     });
@@ -214,7 +206,7 @@ connectBtn.addEventListener('click', async () => {
 });
 
 copyAnswerBtn.addEventListener('click', () => {
-  copyToClipboard(myAnswerDisplay.textContent, copyAnswerBtn, 'Copy Answer Code');
+  copyToClipboard(myAnswerDisplay.textContent, copyAnswerBtn);
 });
 
 // ==================
@@ -246,10 +238,8 @@ finishBtn.addEventListener('click', async () => {
     
     addSystemMessage('✅ Connection complete!');
     
-    // Save session
     localStorage.setItem('solods_v8', JSON.stringify({ myName, partnerName }));
     
-    // Switch to main screen
     setTimeout(() => showMainScreen(), 800);
     
   } catch (error) {
@@ -261,25 +251,30 @@ finishBtn.addEventListener('click', async () => {
 });
 
 // ==================
-// HELPERS: ENCODE / DECODE
+// HELPERS: URL-SAFE BASE64
 // ==================
 function encode(obj) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  const json = JSON.stringify(obj);
+  const base64 = btoa(unescape(encodeURIComponent(json)));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function decode(str) {
-  // Clean the string
   str = str.replace(/\s+/g, '');
-  return JSON.parse(decodeURIComponent(escape(atob(str))));
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) {
+    str += '=';
+  }
+  const json = decodeURIComponent(escape(atob(str)));
+  return JSON.parse(json);
 }
 
-function copyToClipboard(text, btn, originalText) {
+function copyToClipboard(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
     const original = btn.innerHTML;
     btn.innerHTML = '✅ Copied!';
     setTimeout(() => { btn.innerHTML = original; }, 2000);
   }).catch(() => {
-    // Fallback
     const ta = document.createElement('textarea');
     ta.value = text;
     document.body.appendChild(ta);
