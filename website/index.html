@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoloDS — Share a link, not your number</title>
+<meta name="description" content="Voice, video, files — peer-to-peer. No phone number. No account. Just a link.">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg:#ffffff;--bg-soft:#f8fafc;--bg-elevated:#ffffff;
+  --surface:#f1f5f9;--surface-hover:#e2e8f0;
+  --border:rgba(15,23,42,.08);--border-strong:rgba(15,23,42,.16);
+  --text:#0a0a0f;--text-2:#475569;--text-3:#94a3b8;
+  --accent:#0ea5e9;--accent-2:#8b5cf6;--green:#16a34a;--red:#dc2626;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+  --shadow-lg:0 24px 60px rgba(15,23,42,.12);
+  --radius:14px;--radius-lg:20px;--radius-xl:28px;
+}
+
+[data-theme="dark"]{
+  --bg:#08080d;--bg-soft:#0d0d14;--bg-elevated:#111118;
+  --surface:rgba(255,255,255,.04);--surface-hover:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.08);--border-strong:rgba(255,255,255,.16);
+  --text:#fff;--text-2:#a1a1aa;--text-3:#52525b;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-lg:0 24px 60px rgba(0,0,0,.6);
+}
+
+[data-theme="ocean"]{
+  --bg:#041420;--bg-soft:#072536;--bg-elevated:#0a2d41;
+  --surface:rgba(100,200,220,.06);--surface-hover:rgba(100,200,220,.12);
+  --border:rgba(100,200,220,.12);--border-strong:rgba(100,200,220,.22);
+  --text:#e0f5ff;--text-2:#6fa8c4;--text-3:#4a7488;
+  --accent:#22d3ee;--accent-2:#06b6d4;--green:#34d399;--red:#fb7185;
+  --shadow-sm:0 1px 2px rgba(0,15,25,.4);
+  --shadow-lg:0 24px 60px rgba(0,15,25,.6);
+}
+
+[data-theme="sunset"]{
+  --bg:#180a1e;--bg-soft:#22102a;--bg-elevated:#2a1030;
+  --surface:rgba(255,150,200,.06);--surface-hover:rgba(255,150,200,.12);
+  --border:rgba(255,150,200,.12);--border-strong:rgba(255,150,200,.22);
+  --text:#fff0f8;--text-2:#c68fa8;--text-3:#805a6f;
+  --accent:#fb923c;--accent-2:#ec4899;--green:#4ade80;--red:#ef4444;
+  --shadow-sm:0 1px 2px rgba(30,5,25,.4);
+  --shadow-lg:0 24px 60px rgba(30,5,25,.6);
+}
+
+[data-theme="forest"]{
+  --bg:#091408;--bg-soft:#0f1e0e;--bg-elevated:#19281a;
+  --surface:rgba(180,220,150,.06);--surface-hover:rgba(180,220,150,.12);
+  --border:rgba(180,220,150,.12);--border-strong:rgba(180,220,150,.22);
+  --text:#f0f7e8;--text-2:#8ba87e;--text-3:#5a6b52;
+  --accent:#a3e635;--accent-2:#22c55e;--green:#22c55e;--red:#f87171;
+  --shadow-sm:0 1px 2px rgba(10,25,8,.4);
+  --shadow-lg:0 24px 60px rgba(10,25,8,.6);
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;line-height:1.6;
+  overflow-x:hidden;transition:background-color .4s ease,color .4s ease;
+}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:14px 24px;
+  display:flex;justify-content:space-between;align-items:center}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand-mark{width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 30%,transparent)}
+.brand-text{font-size:20px;font-weight:900;letter-spacing:-.6px}
+.brand-accent{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.theme-toggle{width:40px;height:40px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text-2);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .25s}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.theme-toggle svg{width:18px;height:18px}
+.nav-cta{padding:10px 20px;background:var(--surface);
+  border:1px solid var(--border-strong);border-radius:100px;
+  color:var(--text);text-decoration:none;font-size:13px;font-weight:600;
+  transition:all .25s}
+.nav-cta:hover{border-color:var(--accent);color:var(--accent)}
+
+/* THEME POPUP */
+.theme-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  z-index:1000;display:none;align-items:center;justify-content:center;
+  padding:20px;animation:fadeIn .25s ease}
+.theme-popup-overlay.show{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.theme-popup{background:var(--bg-elevated);
+  border:1px solid var(--border-strong);border-radius:var(--radius-xl);
+  padding:32px 28px;max-width:520px;width:100%;
+  box-shadow:0 40px 100px rgba(0,0,0,.4);
+  animation:popupIn .35s cubic-bezier(.16,1,.3,1)}
+@keyframes popupIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.theme-popup h3{font-size:22px;font-weight:900;letter-spacing:-.4px;
+  margin-bottom:6px;text-align:center}
+.theme-popup p{font-size:13px;color:var(--text-2);text-align:center;
+  margin-bottom:24px}
+.theme-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:12px;margin-bottom:20px}
+.theme-option{background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--radius);padding:14px 10px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  font-family:inherit;color:var(--text);font-size:12px;font-weight:700;
+  transition:all .25s cubic-bezier(.16,1,.3,1)}
+.theme-option:hover{border-color:var(--border-strong);
+  transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.theme-option.active{border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 8%,transparent);
+  box-shadow:0 0 20px color-mix(in srgb,var(--accent) 25%,transparent)}
+.theme-preview{width:100%;height:48px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  gap:4px;overflow:hidden}
+.theme-dot{width:12px;height:12px;border-radius:50%}
+.tp-light{background:linear-gradient(135deg,#fff,#f1f5f9)}
+.tp-light .theme-dot:nth-child(1){background:#0ea5e9}
+.tp-light .theme-dot:nth-child(2){background:#8b5cf6}
+.tp-light .theme-dot:nth-child(3){background:#16a34a}
+.tp-dark{background:linear-gradient(135deg,#08080d,#111118)}
+.tp-dark .theme-dot:nth-child(1){background:#0ea5e9}
+.tp-dark .theme-dot:nth-child(2){background:#8b5cf6}
+.tp-dark .theme-dot:nth-child(3){background:#16a34a}
+.tp-ocean{background:linear-gradient(135deg,#041420,#0a2d41)}
+.tp-ocean .theme-dot:nth-child(1){background:#22d3ee}
+.tp-ocean .theme-dot:nth-child(2){background:#06b6d4}
+.tp-ocean .theme-dot:nth-child(3){background:#34d399}
+.tp-sunset{background:linear-gradient(135deg,#180a1e,#2a1030)}
+.tp-sunset .theme-dot:nth-child(1){background:#fb923c}
+.tp-sunset .theme-dot:nth-child(2){background:#ec4899}
+.tp-sunset .theme-dot:nth-child(3){background:#a855f7}
+.tp-forest{background:linear-gradient(135deg,#091408,#19281a)}
+.tp-forest .theme-dot:nth-child(1){background:#a3e635}
+.tp-forest .theme-dot:nth-child(2){background:#22c55e}
+.tp-forest .theme-dot:nth-child(3){background:#d97706}
+.theme-popup-close{width:100%;padding:14px;
+  background:var(--surface);border:1px solid var(--border-strong);
+  border-radius:100px;font-size:14px;font-weight:700;
+  color:var(--text);cursor:pointer;font-family:inherit;transition:all .2s}
+.theme-popup-close:hover{border-color:var(--accent);color:var(--accent)}
+
+/* HERO */
+.hero{padding:150px 24px 80px;text-align:center;max-width:900px;
+  margin:0 auto;position:relative}
+.hero::before{content:'';position:absolute;top:80px;left:50%;
+  transform:translateX(-50%);width:700px;height:700px;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 14%,transparent) 0%,transparent 60%);
+  filter:blur(60px);pointer-events:none;z-index:-1}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;background:var(--surface);border:1px solid var(--border-strong);
+  border-radius:100px;font-size:12px;font-weight:700;color:var(--text-2);
+  margin-bottom:28px;letter-spacing:.2px}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 12px var(--green);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.hero-title{font-size:clamp(44px,9vw,96px);font-weight:900;line-height:.98;
+  letter-spacing:-.045em;margin-bottom:28px}
+.hero-title .accent{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;background-size:200% 200%;
+  animation:shimmer 4s ease infinite}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero-title .strike{color:var(--text-3);text-decoration:line-through;
+  text-decoration-color:var(--red);text-decoration-thickness:4px;
+  text-decoration-skip-ink:none}
+.hero-sub{font-size:clamp(16px,2vw,19px);color:var(--text-2);
+  max-width:620px;margin:0 auto 40px;line-height:1.65}
+.hero-sub strong{color:var(--text);font-weight:700}
+.hero-actions{display:flex;gap:12px;justify-content:center;
+  flex-wrap:wrap;margin-bottom:24px}
+.btn{padding:16px 32px;border-radius:100px;font-size:15px;font-weight:700;
+  text-decoration:none;transition:all .25s cubic-bezier(.16,1,.3,1);
+  display:inline-flex;align-items:center;gap:8px;border:none;
+  cursor:pointer;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 30%,transparent)}
+.btn-primary:hover{transform:translateY(-2px);
+  box-shadow:0 18px 44px color-mix(in srgb,var(--accent) 40%,transparent)}
+.btn-secondary{background:var(--surface);color:var(--text);
+  border:1px solid var(--border-strong)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);
+  transform:translateY(-2px)}
+.hero-note{font-size:13px;color:var(--text-2);margin-bottom:28px;
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;flex-wrap:wrap}
+.hero-note strong{color:var(--accent);font-weight:700}
+.hero-trust{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;
+  font-size:13px;color:var(--text-2)}
+.hero-trust span{display:inline-flex;align-items:center;gap:6px}
+.tick-sm{color:var(--green);font-weight:700}
+
+/* SECTIONS */
+section{padding:80px 24px}
+.section-inner{max-width:1200px;margin:0 auto}
+.section-head{text-align:center;margin-bottom:64px}
+.section-eyebrow{display:inline-block;font-size:11px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;color:var(--accent);
+  margin-bottom:14px}
+.section-head h2{font-size:clamp(32px,5vw,52px);font-weight:900;
+  letter-spacing:-.03em;line-height:1.08;margin-bottom:14px}
+.section-sub{font-size:16px;color:var(--text-2);max-width:560px;margin:0 auto}
+
+/* UNIVERSAL */
+.universal-section{background:var(--bg-soft)}
+.universal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;max-width:1100px;margin:0 auto}
+.universal-card{padding:28px 24px;background:var(--bg-elevated);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  text-align:center;transition:all .3s cubic-bezier(.16,1,.3,1);
+  box-shadow:var(--shadow-sm)}
+.universal-card:hover{border-color:var(--border-strong);
+  transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.universal-icon{font-size:36px;margin-bottom:14px;display:inline-block;
+  filter:grayscale(.15)}
+.universal-card h3{font-size:16px;font-weight:800;letter-spacing:-.2px;
+  margin-bottom:8px;line-height:1.3}
+.universal-card p{font-size:13.5px;color:var(--text-2);line-height:1.55}
+
+/* SUPER FEATURE */
+.super-hero{background:var(--bg-elevated);
+  border:1px solid var(--border-strong);border-radius:var(--radius-xl);
+  padding:56px 48px;display:grid;
+  grid-template-columns:1.2fr 1fr;gap:48px;align-items:center;
+  box-shadow:0 24px 60px color-mix(in srgb,var(--accent) 8%,transparent);
+  position:relative;overflow:hidden;max-width:1100px;margin:0 auto}
+.super-hero::before{content:'';position:absolute;top:-120px;right:-120px;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent) 25%,transparent),transparent 70%);
+  filter:blur(50px);pointer-events:none}
+.super-hero::after{content:'';position:absolute;bottom:-100px;left:-100px;
+  width:350px;height:350px;border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--accent-2) 20%,transparent),transparent 70%);
+  filter:blur(50px);pointer-events:none}
+.super-content{position:relative;z-index:1}
+.super-tag{display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;font-size:10px;font-weight:900;letter-spacing:2px;
+  border-radius:100px;margin-bottom:20px;
+  box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 35%,transparent)}
+.super-title{font-size:clamp(28px,4vw,42px);font-weight:900;
+  letter-spacing:-.03em;line-height:1.1;margin-bottom:18px}
+.super-title .accent{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.super-desc{font-size:16px;color:var(--text-2);line-height:1.7;margin-bottom:28px}
+.super-desc strong{color:var(--text);font-weight:700}
+.super-steps{display:flex;flex-direction:column;gap:14px}
+.super-step{display:flex;align-items:flex-start;gap:14px;font-size:14px;
+  color:var(--text-2);line-height:1.5}
+.super-step .num{width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  background:color-mix(in srgb,var(--accent) 15%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
+  color:var(--accent);font-weight:800;font-size:12px;
+  display:flex;align-items:center;justify-content:center}
+.super-step b{color:var(--text);font-weight:700}
+.super-visual{position:relative;z-index:1;
+  display:flex;flex-direction:column;gap:16px;align-items:center}
+.device-pc{width:100%;max-width:280px;aspect-ratio:16/10;
+  background:linear-gradient(160deg,#1e293b,#0f172a);
+  border-radius:12px;border:6px solid #0a0a0f;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);position:relative;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.device-pc::after{content:'';position:absolute;bottom:-14px;left:50%;
+  transform:translateX(-50%);width:60px;height:8px;
+  background:#0a0a0f;border-radius:0 0 4px 4px}
+.device-screen{width:100%;height:100%;background:#0a0a14;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  gap:8px;padding:16px}
+.caller-avatar{width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;color:#fff;
+  animation:pulse-ring 2s ease-in-out infinite;position:relative}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(14,165,233,.6)}
+  50%{box-shadow:0 0 0 14px rgba(14,165,233,0)}}
+.caller-name{font-size:12px;font-weight:700;color:#fff}
+.caller-label{font-size:9px;color:#94a3b8;letter-spacing:2px}
+.device-phone{width:80px;height:150px;background:#0a0a0f;
+  border-radius:14px;border:4px solid #1e293b;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;position:relative}
+.device-phone::before{content:'';position:absolute;top:6px;left:50%;
+  transform:translateX(-50%);width:24px;height:3px;
+  background:#1e293b;border-radius:2px}
+.phone-content{padding:16px 8px 8px;text-align:center;color:#94a3b8;
+  font-size:8px;line-height:1.4}
+.phone-dot{width:8px;height:8px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 12px var(--green);
+  margin:0 auto 8px}
+.connection-line{display:flex;align-items:center;justify-content:center;
+  gap:8px;font-size:10px;color:var(--accent);
+  font-weight:800;letter-spacing:2px;margin-top:-8px}
+.connection-line::before,.connection-line::after{content:'';
+  width:24px;height:1px;background:linear-gradient(90deg,transparent,var(--accent))}
+.connection-line::after{background:linear-gradient(90deg,var(--accent),transparent)}
+
+/* HIDDEN GRID */
+.hidden-grid{display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:16px;margin-top:40px}
+.hidden-card{padding:24px 22px;background:var(--bg-elevated);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  transition:all .3s cubic-bezier(.16,1,.3,1);
+  box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.hidden-card:hover{border-color:var(--border-strong);
+  transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.hidden-card::before{content:'';position:absolute;top:0;left:0;right:0;
+  height:2px;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  transform:scaleX(0);transform-origin:left;transition:transform .4s}
+.hidden-card:hover::before{transform:scaleX(1)}
+.hidden-icon{width:42px;height:42px;border-radius:12px;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:16px}
+.hidden-card h3{font-size:16px;font-weight:800;letter-spacing:-.2px;
+  margin-bottom:8px;line-height:1.3}
+.hidden-card p{font-size:13.5px;color:var(--text-2);line-height:1.55}
+
+/* OWN DEVICE TRANSFER */
+.owntransfer{background:var(--bg-soft)}
+.ot-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;
+  align-items:center;max-width:1000px;margin:0 auto}
+.ot-visual{display:flex;flex-direction:column;gap:12px;align-items:center}
+.ot-flow{display:flex;align-items:center;gap:12px;justify-content:center;
+  flex-wrap:wrap}
+.ot-device{width:70px;height:110px;background:var(--bg-elevated);
+  border:1px solid var(--border-strong);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;box-shadow:var(--shadow-sm)}
+.ot-arrow{font-size:20px;color:var(--accent);font-weight:900}
+.ot-tag{font-size:11px;color:var(--text-3);letter-spacing:2px;
+  font-weight:700;text-transform:uppercase;margin-top:6px;text-align:center}
+.ot-content h3{font-size:clamp(24px,3vw,34px);font-weight:900;
+  letter-spacing:-.03em;line-height:1.15;margin-bottom:14px}
+.ot-content h3 .accent{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ot-content p{font-size:15px;color:var(--text-2);line-height:1.7;
+  margin-bottom:20px}
+.ot-list{display:flex;flex-direction:column;gap:10px}
+.ot-item{display:flex;align-items:flex-start;gap:10px;font-size:14px;
+  color:var(--text-2);line-height:1.5}
+.ot-item .tick{color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* PAIN */
+.pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px}
+.pain-card{padding:32px 28px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  transition:all .3s cubic-bezier(.16,1,.3,1)}
+.pain-card:hover{border-color:var(--border-strong);
+  transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.pain-quote{font-size:15px;font-weight:700;color:var(--text);
+  margin-bottom:18px;line-height:1.5;font-style:italic;
+  position:relative;padding-left:20px}
+.pain-quote::before{content:'';position:absolute;left:0;top:6px;bottom:6px;
+  width:3px;background:var(--red);border-radius:2px}
+.pain-solution{display:flex;align-items:flex-start;gap:10px;
+  font-size:14px;color:var(--text-2);line-height:1.6;
+  padding-top:18px;border-top:1px dashed var(--border-strong)}
+.pain-solution .tick{color:var(--green);font-weight:700;flex-shrink:0}
+
+/* HOW */
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px}
+.how-card{padding:32px 28px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  transition:all .3s cubic-bezier(.16,1,.3,1)}
+.how-card:hover{border-color:var(--border-strong);
+  transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.how-num{font-size:12px;font-weight:800;color:var(--text-3);
+  letter-spacing:2px;margin-bottom:20px}
+.how-icon{font-size:40px;margin-bottom:18px}
+.how-card h3{font-size:20px;font-weight:800;letter-spacing:-.3px;
+  margin-bottom:10px}
+.how-card p{font-size:14px;color:var(--text-2);line-height:1.6}
+.how-card code{background:var(--surface-hover);padding:2px 8px;
+  border-radius:6px;font-family:'SF Mono',Monaco,monospace;
+  font-size:13px;color:var(--accent)}
+
+/* COMPARISON */
+.comp-table{background:var(--bg-elevated);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);
+  overflow-x:auto}
+.comp-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;
+  border-bottom:1px solid var(--border);min-width:640px}
+.comp-row:last-child{border-bottom:none}
+.comp-header{background:var(--surface-hover);font-weight:800;
+  font-size:12px;text-transform:uppercase;letter-spacing:1.2px}
+.comp-cell{padding:18px 16px;font-size:14px;color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;text-align:center}
+.comp-feature{justify-content:flex-start;text-align:left;
+  font-weight:600;color:var(--text)}
+.comp-featured{background:color-mix(in srgb,var(--accent) 5%,transparent);
+  color:var(--accent);font-weight:700}
+.check{color:var(--green);font-size:18px;font-weight:700}
+.cross{color:var(--text-3)}
+
+/* PRICING */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:20px;align-items:stretch}
+.price-card{padding:32px 26px;background:var(--bg-elevated);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  display:flex;flex-direction:column;
+  transition:all .3s cubic-bezier(.16,1,.3,1);position:relative;
+  box-shadow:var(--shadow-sm)}
+.price-card:hover{border-color:var(--border-strong);
+  transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.price-card-featured{border-color:var(--accent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 6%,transparent),
+  color-mix(in srgb,var(--accent-2) 3%,transparent));
+  box-shadow:0 24px 60px color-mix(in srgb,var(--accent) 18%,transparent);
+  transform:scale(1.02)}
+.price-card-featured:hover{transform:scale(1.02) translateY(-4px)}
+.featured-badge{position:absolute;top:-12px;right:24px;padding:6px 14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;font-size:10px;font-weight:900;letter-spacing:1.5px;
+  border-radius:100px;box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 35%,transparent)}
+.price-tier{font-size:13px;font-weight:800;color:var(--text-2);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+.price-amount{display:flex;align-items:baseline;gap:4px;margin-bottom:6px}
+.price-currency{font-size:22px;font-weight:800;color:var(--text-2)}
+.price-number{font-size:48px;font-weight:900;letter-spacing:-.03em;
+  color:var(--text);line-height:1}
+.price-card-featured .price-number{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text}
+.price-period{font-size:14px;font-weight:600;color:var(--text-3)}
+.price-alt{
+  font-size:15px;
+  font-weight:800;
+  color:var(--text-2);
+  margin-top:4px;
+  margin-bottom:18px;
+  letter-spacing:.2px;
+  display:inline-block;
+}
+.price-card-featured .price-alt{
+  color:var(--accent);
+  font-weight:900;
+}
+.price-desc{font-size:13.5px;color:var(--text-2);margin-bottom:24px;
+  line-height:1.55;font-weight:500}
+.price-features{list-style:none;margin-bottom:28px;flex:1}
+.price-features li{display:flex;align-items:flex-start;gap:10px;
+  padding:7px 0;font-size:13.5px;color:var(--text-2);line-height:1.4}
+.price-features .tick{color:var(--green);font-weight:700;
+  flex-shrink:0;margin-top:1px}
+.price-features b{color:var(--text);font-weight:700}
+.price-cta{display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;width:100%;padding:14px;border-radius:100px;font-size:14px;
+  font-weight:700;text-align:center;text-decoration:none;
+  transition:all .25s cubic-bezier(.16,1,.3,1);font-family:inherit;
+  cursor:pointer;border:none}
+.price-cta-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 30%,transparent)}
+.price-cta-primary:hover{transform:translateY(-2px);
+  box-shadow:0 18px 40px color-mix(in srgb,var(--accent) 40%,transparent)}
+.price-cta-outline{background:transparent;color:var(--text);
+  border:1px solid var(--border-strong)}
+.price-cta-outline:hover{border-color:var(--accent);color:var(--accent)}
+
+/* FAQ */
+.faq-list{max-width:800px;margin:0 auto;display:flex;
+  flex-direction:column;gap:12px}
+.faq-item{background:var(--bg-elevated);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;transition:all .25s;
+  box-shadow:var(--shadow-sm)}
+.faq-item[open]{border-color:var(--border-strong)}
+.faq-item summary{padding:22px 26px;font-size:15px;font-weight:700;
+  cursor:pointer;list-style:none;display:flex;justify-content:space-between;
+  align-items:center;color:var(--text)}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:'+';font-size:22px;font-weight:400;
+  color:var(--accent);transition:transform .25s}
+.faq-item[open] summary::after{content:'−'}
+.faq-item p{padding:0 26px 24px;font-size:14px;color:var(--text-2);
+  line-height:1.7}
+
+/* FINAL CTA */
+.final-cta-card{max-width:900px;margin:0 auto;padding:64px 40px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 8%,transparent),
+  color-mix(in srgb,var(--accent-2) 5%,transparent));
+  border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);
+  border-radius:var(--radius-xl);text-align:center;position:relative;
+  overflow:hidden}
+.final-cta-card::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,
+  color-mix(in srgb,var(--accent) 15%,transparent),transparent 60%);
+  pointer-events:none}
+.final-cta-card h2{position:relative;font-size:clamp(28px,4vw,42px);
+  font-weight:900;letter-spacing:-.03em;margin-bottom:14px}
+.final-cta-card p{position:relative;font-size:16px;color:var(--text-2);
+  margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto}
+.cta-buttons{position:relative;display:flex;gap:12px;
+  justify-content:center;flex-wrap:wrap}
+
+/* FOOTER */
+.footer{padding:40px 24px;border-top:1px solid var(--border);
+  text-align:center;background:var(--bg-soft)}
+.footer-inner{max-width:900px;margin:0 auto}
+.footer-brand{display:flex;align-items:center;justify-content:center;
+  gap:10px;margin-bottom:14px;font-weight:900;font-size:18px}
+.footer-brand .brand-mark{width:32px;height:32px;border-radius:10px}
+.footer-tag{font-size:13px;color:var(--text-2);margin-bottom:22px}
+.footer-links{display:flex;gap:24px;justify-content:center;
+  flex-wrap:wrap;margin-bottom:24px}
+.footer-links a{color:var(--text-2);text-decoration:none;
+  font-size:13px;font-weight:600;transition:color .2s}
+.footer-links a:hover{color:var(--accent)}
+.footer-copy{font-size:12px;color:var(--text-3)}
+
+/* MOBILE */
+@media(max-width:900px){
+  .super-hero{grid-template-columns:1fr;gap:32px;padding:40px 28px}
+  .super-visual{order:-1}
+  .ot-grid{grid-template-columns:1fr;gap:24px}
+}
+@media(max-width:768px){
+  .nav-inner{padding:12px 20px}
+  .nav-cta{padding:8px 16px;font-size:12px}
+  .hero{padding:120px 20px 60px}
+  .hero-actions{flex-direction:column}
+  .hero-actions .btn{width:100%;justify-content:center}
+  section{padding:60px 20px}
+  .pricing-grid{grid-template-columns:1fr}
+  .price-card-featured{transform:scale(1)}
+  .price-card-featured:hover{transform:translateY(-4px)}
+  .final-cta-card{padding:44px 24px}
+  .cta-buttons{flex-direction:column}
+  .cta-buttons .btn{width:100%;justify-content:center}
+  .comp-row{grid-template-columns:1.6fr 1fr 1fr}
+  .comp-row .comp-cell:nth-child(4),
+  .comp-row .comp-cell:nth-child(5){display:none}
+  .comp-header .comp-cell:nth-child(4),
+  .comp-header .comp-cell:nth-child(5){display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-text">Solo<span class="brand-accent">DS</span></span>
+    </a>
+    <div class="nav-actions">
+      <button class="theme-toggle" onclick="openThemePopup()" aria-label="Choose theme">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <a href="#pricing" class="nav-cta">Pricing</a>
+    </div>
+  </div>
+</nav>
+
+<div class="theme-popup-overlay" id="themePopup">
+  <div class="theme-popup">
+    <h3>Choose your theme</h3>
+    <p>Pick a vibe. Change anytime.</p>
+    <div class="theme-grid">
+      <button class="theme-option" data-theme-choice="light">
+        <div class="theme-preview tp-light"><div class="theme-dot"></div><div class="theme-dot"></div><div class="theme-dot"></div></div>
+        <span>Light</span>
+      </button>
+      <button class="theme-option" data-theme-choice="dark">
+        <div class="theme-preview tp-dark"><div class="theme-dot"></div><div class="theme-dot"></div><div class="theme-dot"></div></div>
+        <span>Dark</span>
+      </button>
+      <button class="theme-option" data-theme-choice="ocean">
+        <div class="theme-preview tp-ocean"><div class="theme-dot"></div><div class="theme-dot"></div><div class="theme-dot"></div></div>
+        <span>Ocean</span>
+      </button>
+      <button class="theme-option" data-theme-choice="sunset">
+        <div class="theme-preview tp-sunset"><div class="theme-dot"></div><div class="theme-dot"></div><div class="theme-dot"></div></div>
+        <span>Sunset</span>
+      </button>
+      <button class="theme-option" data-theme-choice="forest">
+        <div class="theme-preview tp-forest"><div class="theme-dot"></div><div class="theme-dot"></div><div class="theme-dot"></div></div>
+        <span>Forest</span>
+      </button>
+    </div>
+    <button class="theme-popup-close" onclick="closeThemePopup()">Done</button>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    No Google. No OTP. No phone number. Ever.
+  </div>
+  <h1 class="hero-title">
+    Share a <span class="accent">link</span>.<br>
+    Not your <span class="strike">number</span>.
+  </h1>
+  <p class="hero-sub">
+    Voice. Video. Files. All peer-to-peer.<br>
+    <strong>For everyone with a browser. Nothing to install.</strong>
+  </p>
+  <div class="hero-actions">
+    <a href="#pricing" class="btn btn-primary">
+      View Pricing
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <a href="https://softappweber.github.io/nextlast/v16/" class="btn btn-secondary" target="_blank">
+      Launch App
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+  <p class="hero-note">
+    🎁 Free 5-minute demo. <strong>No signup. No card. No tricks.</strong>
+  </p>
+  <div class="hero-trust">
+    <span><span class="tick-sm">✓</span> Works in any browser</span>
+    <span><span class="tick-sm">✓</span> End-to-end encrypted</span>
+    <span><span class="tick-sm">✓</span> No app install</span>
+  </div>
+</section>
+
+<section class="universal-section">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">For Everyone</span>
+      <h2>Built for every human.<br>Not just for the tech-savvy.</h2>
+      <p class="section-sub">No logins. No verification. No waiting. Just open, share, talk.</p>
+    </div>
+
+    <div class="universal-grid">
+      <div class="universal-card">
+        <div class="universal-icon">🚫</div>
+        <h3>No Google login</h3>
+        <p>Zero third-party sign-in. We don't ask who you are.</p>
+      </div>
+      <div class="universal-card">
+        <div class="universal-icon">📵</div>
+        <h3>No OTP. No SMS.</h3>
+        <p>We never ask for a code. There is nothing to verify.</p>
+      </div>
+      <div class="universal-card">
+        <div class="universal-icon">📱</div>
+        <h3>Works on any device</h3>
+        <p>Phone, laptop, tablet, borrowed PC — if it has a browser, it works.</p>
+      </div>
+      <div class="universal-card">
+        <div class="universal-icon">🌍</div>
+        <h3>Same link worldwide</h3>
+        <p>No SIM lock, no country restriction, no roaming. Just internet.</p>
+      </div>
+      <div class="universal-card">
+        <div class="universal-icon">⚡</div>
+        <h3>Zero setup</h3>
+        <p>Nothing to install. Nothing to configure. Nothing to update.</p>
+      </div>
+      <div class="universal-card">
+        <div class="universal-icon">🎓</div>
+        <h3>Anyone can use it</h3>
+        <p>Grandmother, freelancer, student, shop owner — same easy flow.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUPER FEATURE -->
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">The Superpower</span>
+      <h2>Take calls on your PC.<br>Using just your mobile link.</h2>
+      <p class="section-sub">Something Zoom, Meet, and WhatsApp can't do without apps, accounts, or QR scans.</p>
+    </div>
+
+    <div class="super-hero">
+      <div class="super-content">
+        <div class="super-tag">✦ UNIQUE</div>
+        <h3 class="super-title">Your <span class="accent">mobile link</span> rings your PC.</h3>
+        <p class="super-desc">
+          Keep your phone in your pocket. Open SoloDS on your PC. Share your link.
+          When someone calls — <strong>it rings on your laptop</strong>, with full PC mic & speakers.
+          Your phone was never touched.
+        </p>
+        <div class="super-steps">
+          <div class="super-step">
+            <span class="num">1</span>
+            <span>Open SoloDS on your PC → pick a name → get your link.</span>
+          </div>
+          <div class="super-step">
+            <span class="num">2</span>
+            <span>Share that link — WhatsApp, Instagram, email signature.</span>
+          </div>
+          <div class="super-step">
+            <span class="num">3</span>
+            <span>Someone clicks → <b>your PC rings</b> → you answer on desktop.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="super-visual">
+        <div class="device-pc">
+          <div class="device-screen">
+            <div class="caller-avatar">S</div>
+            <div class="caller-name">Rahul</div>
+            <div class="caller-label">INCOMING CALL</div>
+          </div>
+        </div>
+        <div class="connection-line">LINK ONLY</div>
+        <div class="device-phone">
+          <div class="phone-content">
+            <div class="phone-dot"></div>
+            Phone in pocket<br>Never touched
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hidden-grid">
+      <div class="hidden-card">
+        <div class="hidden-icon">🖥️</div>
+        <h3>Screen share without install</h3>
+        <p>Share your entire screen from any device. Just send the link. No app, no plugin, no permission maze.</p>
+      </div>
+      <div class="hidden-card">
+        <div class="hidden-icon">📁</div>
+        <h3>Send 500 MB — peer to peer</h3>
+        <p>No cloud, no upload wait, no compression. Your file goes directly from your device to theirs.</p>
+      </div>
+      <div class="hidden-card">
+        <div class="hidden-icon">🚫</div>
+        <h3>Zero signup. Forever.</h3>
+        <p>No email. No phone. No account. Not even a username. Just a name you type once and forget.</p>
+      </div>
+      <div class="hidden-card">
+        <div class="hidden-icon">📵</div>
+        <h3>Works without a SIM</h3>
+        <p>Voice calls over pure internet. Use it on a tablet, a hotel PC, a borrowed laptop — nothing installs.</p>
+      </div>
+      <div class="hidden-card">
+        <div class="hidden-icon">⚡</div>
+        <h3>Zero middleman</h3>
+        <p>Your call is encrypted end-to-end, device to device. We literally can't see it — even if we wanted to.</p>
+      </div>
+      <div class="hidden-card">
+        <div class="hidden-icon">🌐</div>
+        <h3>Same link, worldwide</h3>
+        <p>Your link works from Mumbai to New York. No SIM lock, no country restriction, no roaming fees.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OWN DEVICE TRANSFER -->
+<section class="owntransfer">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">Another Superpower</span>
+      <h2>Send files to yourself.<br>Phone → PC in one link.</h2>
+      <p class="section-sub">No WhatsApp. No Telegram. No email. Just your own link.</p>
+    </div>
+
+    <div class="ot-grid">
+      <div class="ot-visual">
+        <div class="ot-flow">
+          <div class="ot-device">📱</div>
+          <div class="ot-arrow">→</div>
+          <div class="ot-device">🔗</div>
+          <div class="ot-arrow">→</div>
+          <div class="ot-device">💻</div>
+        </div>
+        <div class="ot-tag">YOUR OWN LINK · YOUR OWN DEVICES</div>
+      </div>
+
+      <div class="ot-content">
+        <h3>Type your <span class="accent">own link</span> on any device.<br>Instantly connected.</h3>
+        <p>
+          Open SoloDS on your mobile → get your link.
+          Open that same link on your PC → both devices see each other.
+          Drop a file on one. It appears on the other. That simple.
+        </p>
+        <div class="ot-list">
+          <div class="ot-item"><span class="tick">✓</span><span>No WhatsApp "Sent to yourself" awkwardness</span></div>
+          <div class="ot-item"><span class="tick">✓</span><span>No Telegram cloud uploads</span></div>
+          <div class="ot-item"><span class="tick">✓</span><span>No email attachments, no size limits</span></div>
+          <div class="ot-item"><span class="tick">✓</span><span>No cloud — direct device to device</span></div>
+          <div class="ot-item"><span class="tick">✓</span><span>Original quality, no compression, no re-encoding</span></div>
+          <div class="ot-item"><span class="tick">✓</span><span>Works across mobile data + WiFi — TURN relay handles it</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">The Problem</span>
+      <h2>You hate sharing your number.<br>So does everyone.</h2>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-quote">"Sold a sofa on OLX. Got 40 spam calls for a month."</div>
+        <div class="pain-solution">
+          <span class="tick">✓</span>
+          <span>Share your SoloDS link instead. They call. You talk. Number stays private.</span>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-quote">"Zoom's 40-minute limit cut off my client mid-sentence."</div>
+        <div class="pain-solution">
+          <span class="tick">✓</span>
+          <span>SoloDS gives unlimited calls for ₹99/month. 11× cheaper than Zoom Pro.</span>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-quote">"WhatsApp Business forced me to make my number public."</div>
+        <div class="pain-solution">
+          <span class="tick">✓</span>
+          <span>SoloDS never needs your number. Ever. By design.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">How It Works</span>
+      <h2>Live in 30 seconds.</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">01</div>
+        <div class="how-icon">🎯</div>
+        <h3>Pick a name</h3>
+        <p>Type your name. Get your personal link: <code>solods.link/yourname</code></p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">02</div>
+        <div class="how-icon">📤</div>
+        <h3>Share the link</h3>
+        <p>Instagram bio. WhatsApp. Business card. Email signature. Anywhere.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">03</div>
+        <div class="how-icon">📞</div>
+        <h3>Get called</h3>
+        <p>Anyone taps your link. Your phone — or your PC — rings. You talk.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">Compare</span>
+      <h2>What you get on each plan</h2>
+    </div>
+
+    <div class="comp-table">
+      <div class="comp-row comp-header">
+        <div class="comp-cell comp-feature">Feature</div>
+        <div class="comp-cell">Demo</div>
+        <div class="comp-cell comp-featured">Pro</div>
+        <div class="comp-cell">Business</div>
+        <div class="comp-cell">Enterprise</div>
+      </div>
+
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Voice Calls</div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Video Calls</div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">File Transfer</div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Own Device Transfer</div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Screen Sharing</div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Call Duration</div>
+        <div class="comp-cell">5 min</div>
+        <div class="comp-cell comp-featured">Unlimited</div>
+        <div class="comp-cell">Unlimited</div>
+        <div class="comp-cell">Unlimited</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Custom Subdomain</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Call Recording</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">No SoloDS Branding</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="cross">—</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Group Calls</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="cross">—</span></div>
+        <div class="comp-cell">Up to 10</div>
+        <div class="comp-cell">Unlimited</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Team Accounts</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="cross">—</span></div>
+        <div class="comp-cell">5 users</div>
+        <div class="comp-cell">Unlimited</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Custom Domain</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="cross">—</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">White-Label Platform</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="cross">—</span></div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Self-Hosted Option</div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell comp-featured"><span class="cross">—</span></div>
+        <div class="comp-cell"><span class="cross">—</span></div>
+        <div class="comp-cell"><span class="check">✓</span></div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell comp-feature">Support</div>
+        <div class="comp-cell">—</div>
+        <div class="comp-cell comp-featured">Email</div>
+        <div class="comp-cell">Priority</div>
+        <div class="comp-cell">24/7</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">Pricing</span>
+      <h2>Simple plans. Serious value.</h2>
+      <p class="section-sub">Start with a 5-minute free demo. Upgrade when you love it.</p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <div class="price-card">
+        <div class="price-tier">Free Demo</div>
+        <div class="price-amount">
+          <span class="price-currency">₹</span>
+          <span class="price-number">0</span>
+          <span class="price-period">/ forever</span>
+        </div>
+        <div class="price-alt">$0 · free forever</div>
+        <p class="price-desc">Try everything for 5 minutes. Feel the magic.</p>
+        <ul class="price-features">
+          <li><span class="tick">✓</span> Voice calls</li>
+          <li><span class="tick">✓</span> Video calls</li>
+          <li><span class="tick">✓</span> File transfer</li>
+          <li><span class="tick">✓</span> Own device transfer</li>
+          <li><span class="tick">✓</span> Screen sharing</li>
+          <li><span class="tick">✓</span> 5-min per session</li>
+        </ul>
+        <a href="https://softappweber.github.io/nextlast/v16/" class="price-cta price-cta-outline" target="_blank">Start Demo</a>
+      </div>
+
+      <div class="price-card price-card-featured">
+        <div class="featured-badge">POPULAR</div>
+        <div class="price-tier">Pro</div>
+        <div class="price-amount">
+          <span class="price-currency">₹</span>
+          <span class="price-number">99</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <div class="price-alt">$1.99 · per month</div>
+        <p class="price-desc">For freelancers, tutors, doctors, agents, coaches.</p>
+        <ul class="price-features">
+          <li><span class="tick">✓</span> <b>Everything in Demo</b></li>
+          <li><span class="tick">✓</span> Unlimited call time</li>
+          <li><span class="tick">✓</span> Personal app link</li>
+          <li><span class="tick">✓</span> Custom subdomain</li>
+          <li><span class="tick">✓</span> Call recording</li>
+          <li><span class="tick">✓</span> Email support</li>
+        </ul>
+        <a href="https://softappweber.github.io/sushantcoder" class="price-cta price-cta-primary">
+          Buy Now
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-tier">Business</div>
+        <div class="price-amount">
+          <span class="price-currency">₹</span>
+          <span class="price-number">350</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <div class="price-alt">$4.99 · per month</div>
+        <p class="price-desc">For teams, clinics, coaching centers, offices.</p>
+        <ul class="price-features">
+          <li><span class="tick">✓</span> <b>Everything in Pro</b></li>
+          <li><span class="tick">✓</span> Team accounts (5 users)</li>
+          <li><span class="tick">✓</span> Group calls (up to 10)</li>
+          <li><span class="tick">✓</span> Custom domain</li>
+          <li><span class="tick">✓</span> Analytics dashboard</li>
+          <li><span class="tick">✓</span> No SoloDS branding</li>
+        </ul>
+        <a href="https://softappweber.github.io/sushantcoder" class="price-cta price-cta-outline">Buy Now</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-tier">Enterprise</div>
+        <div class="price-amount">
+          <span class="price-currency">₹</span>
+          <span class="price-number">600</span>
+          <span class="price-period">/ month</span>
+        </div>
+        <div class="price-alt">$7.99 · per month</div>
+        <p class="price-desc">For organizations that value privacy.</p>
+        <ul class="price-features">
+          <li><span class="tick">✓</span> <b>Everything in Business</b></li>
+          <li><span class="tick">✓</span> Unlimited users</li>
+          <li><span class="tick">✓</span> White-label platform</li>
+          <li><span class="tick">✓</span> Self-hosted option</li>
+          <li><span class="tick">✓</span> Dedicated infrastructure</li>
+          <li><span class="tick">✓</span> 24/7 support</li>
+        </ul>
+        <a href="https://softappweber.github.io/sushantcoder" class="price-cta price-cta-outline">Buy Now</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="section-head">
+      <span class="section-eyebrow">FAQ</span>
+      <h2>Questions, answered.</h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>Can I really take calls on my PC?</summary>
+        <p>Yes. Open SoloDS on your PC, go online, share your link. When someone calls, your PC rings with full mic and speaker support. Your phone can stay in your pocket.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I send files from my phone to my PC?</summary>
+        <p>Yes. Open SoloDS on both devices with the same link. They'll see each other. Send any file — the other device receives it directly, in original quality.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do I need a Google account or phone number?</summary>
+        <p>No. Never. SoloDS works without phone numbers, Google logins, or OTPs. That's the whole point.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What does the free 5-minute demo include?</summary>
+        <p>Everything. Voice, video, files, screen share — all limited to 5 minutes per session. Enough to know if you love it.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is it really private?</summary>
+        <p>Yes. Every call is encrypted end-to-end, device to device. Nothing goes through our servers. We can't see, hear, or record anything.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do I need to install anything?</summary>
+        <p>No. Works in any browser. For paid plans, we also give you a personal app link you can add to your home screen — feels like a native app.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why is it so cheap?</summary>
+        <p>Because we don't run expensive servers. Your device does the heavy lifting. That's why we can charge ₹99 while others charge ₹1,100.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-inner">
+    <div class="final-cta-card">
+      <h2>Your number is yours.</h2>
+      <p>Stop giving it away. Share a link instead. Start with a free 5-minute demo. Upgrade when you fall in love.</p>
+      <div class="cta-buttons">
+        <a href="https://softappweber.github.io/nextlast/v16/" class="btn btn-primary" target="_blank">Start Free Demo</a>
+        <a href="#pricing" class="btn btn-secondary">See Pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span>SoloDS</span>
+    </div>
+    <p class="footer-tag">Peer-to-peer communication. No server. No number. No nonsense.</p>
+    <div class="footer-links">
+      <a href="https://softappweber.github.io/nextlast/v16/" target="_blank">App</a>
+      <a href="#pricing">Pricing</a>
+      <a href="mailto:hello@solods.link">Contact</a>
+    </div>
+    <p class="footer-copy">© 2026 SoloDS. Built solo. Owned by you.</p>
+  </div>
+</footer>
+
+<script>
+function openThemePopup(){
+  document.getElementById('themePopup').classList.add('show');
+  updateActiveTheme();
+}
+function closeThemePopup(){
+  document.getElementById('themePopup').classList.remove('show');
+}
+function updateActiveTheme(){
+  const current=document.documentElement.getAttribute('data-theme')||'light';
+  document.querySelectorAll('.theme-option').forEach(el=>{
+    el.classList.toggle('active',el.dataset.themeChoice===current);
+  });
+}
+document.querySelectorAll('.theme-option').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const theme=btn.dataset.themeChoice;
+    document.documentElement.setAttribute('data-theme',theme);
+    try{localStorage.setItem('solods_theme',theme)}catch(e){}
+    updateActiveTheme();
+  });
+});
+document.getElementById('themePopup').addEventListener('click',(e)=>{
+  if(e.target.id==='themePopup')closeThemePopup();
+});
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape')closeThemePopup();
+});
+(function(){
+  try{
+    const saved=localStorage.getItem('solods_theme');
+    if(saved){document.documentElement.setAttribute('data-theme',saved);}
+    else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){
+      document.documentElement.setAttribute('data-theme','dark');
+    }
+  }catch(e){}
+})();
+</script>
+
+</body>
+</html>
