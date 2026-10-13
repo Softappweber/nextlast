@@ -1,6 +1,18 @@
 /* ============================================================
-   SoloDS Demo — app.js
+   SoloDS Free Demo — app.js
    5-min session · 1 MB file cap · 3-layer device lock
+   Upgrade → https://softappweber.github.io/nextlast/website/
+   ============================================================ */
+
+/* ============================================================
+   DEV BYPASS — set true only while you are testing.
+   When launching to real users: false.
+   ============================================================ */
+
+const DEV_BYPASS = false;
+
+/* ============================================================
+   CONFIG
    ============================================================ */
 
 const DEMO_LIMIT_SECONDS = 5 * 60;
@@ -9,6 +21,7 @@ const DEMO_DB_NAME = 'solods_demo_db';
 const DEMO_COOKIE_NAME = 'solods_demo_fp';
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 const CHUNK_SIZE = 16 * 1024;
+const UPGRADE_URL = 'https://softappweber.github.io/nextlast/website/';
 
 const ICE_CONFIG = {
   iceServers: [
@@ -20,7 +33,12 @@ const ICE_CONFIG = {
   ]
 };
 
+/* ============================================================
+   STATE
+   ============================================================ */
+
 let myName = '';
+let demoSessionId = '';
 let peerConnection = null;
 let dataChannel = null;
 let localStream = null;
@@ -159,11 +177,15 @@ function getCookie(name) {
 }
 
 /* ============================================================
-   DEMO STATE
+   DEMO STATE — DEV_BYPASS aware
    ============================================================ */
 
 async function checkDemoStatus() {
   fingerprint = await generateFingerprint();
+
+  if (DEV_BYPASS) {
+    return { used: false, tamper: false, fingerprint };
+  }
 
   let lsData = null;
   try { lsData = JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY) || 'null'); } catch {}
@@ -183,6 +205,8 @@ async function checkDemoStatus() {
 }
 
 async function markDemoUsed() {
+  if (DEV_BYPASS) return;
+
   const now = Date.now();
   const existing = JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY) || 'null');
   const existingDb = await dbGet('main');
@@ -267,7 +291,7 @@ document.querySelectorAll('.theme-option').forEach(btn => {
 });
 
 /* ============================================================
-   START DEMO
+   START DEMO — generates shareable session ID
    ============================================================ */
 
 async function startDemo() {
@@ -286,25 +310,51 @@ async function startDemo() {
     return;
   }
 
+  // Generate short shareable session ID
+  const tag = Math.random().toString(36).substring(2, 6);
+  demoSessionId = myName + '-' + tag;
+
   document.getElementById('landingScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
   document.getElementById('partnerNameDisplay').textContent = myName;
   document.getElementById('partnerAvatar').textContent = myName.charAt(0).toUpperCase();
   document.getElementById('demoBanner').classList.remove('hidden');
 
+  // Show shareable link in chat
+  const shareUrl = window.location.origin + window.location.pathname + '?call=' + demoSessionId;
   addSystemMessage('Demo started — 5 minutes');
-  addSystemMessage('Share your ID with a friend to test');
+  addSystemMessage('Send this link to a friend to test:');
+  addSystemMessage(shareUrl);
+
+  // Copy to clipboard automatically
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showToast('Demo link copied — send to your friend', 'success', 5000);
+  } catch (e) {
+    showToast('Copy the demo link from chat', 'info', 4000);
+  }
 
   demoStartTime = Date.now();
   sessionActive = true;
   startDemoTimer();
 
   try {
-    const peerId = 'solods-demo-' + Math.random().toString(36).substring(2, 10);
+    const peerId = 'solods-demo-' + demoSessionId;
     demoPeer = new Peer(peerId, { debug: 1, config: ICE_CONFIG });
 
-    demoPeer.on('open', () => setConnStatus('Online'));
-    demoPeer.on('error', (err) => { console.error(err); setConnStatus('Offline'); });
+    demoPeer.on('open', () => {
+      setConnStatus('Online');
+      addSystemMessage('You are online. Waiting for friend to join…');
+    });
+
+    demoPeer.on('error', (err) => {
+      console.error('Peer error:', err);
+      setConnStatus('Offline');
+      if (err.type === 'unavailable-id') {
+        addSystemMessage('ID conflict. Restart the demo.');
+      }
+    });
+
     demoPeer.on('call', (call) => {
       currentCall = call;
       document.getElementById('callButtonsIdle').classList.add('hidden');
@@ -313,14 +363,79 @@ async function startDemo() {
       document.getElementById('callStatusText').textContent = 'Incoming call';
       startRingtone();
     });
+
     demoPeer.on('connection', (conn) => {
       dataChannel = conn;
       setupPeerDataChannel();
     });
+
+    // Caller-side: if URL has ?call=X, initiate call automatically
+    handleCallerMode();
+
   } catch (e) {
     console.error(e);
+    addSystemMessage('Connection failed. Try refreshing.');
   }
 }
+
+/* ============================================================
+   CALLER MODE — friend opens ?call=<id>
+   ============================================================ */
+
+async function handleCallerMode() {
+  const params = new URLSearchParams(window.location.search);
+  const targetId = (params.get('call') || '').trim().toLowerCase();
+  if (!targetId) return;
+
+  // We are the caller. Wait for peer to be ready, then place call.
+  addSystemMessage('Joining as caller…');
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true },
+      video: false
+    });
+    localStream.getAudioTracks().forEach(t => { t.enabled = true; });
+
+    const peerId = 'solods-demo-' + targetId;
+    const call = demoPeer.call(peerId, localStream);
+
+    if (!call) {
+      addSystemMessage('Could not reach host');
+      return;
+    }
+
+    currentCall = call;
+
+    call.on('stream', (stream) => {
+      remoteStream = stream;
+      document.getElementById('remoteAudio').srcObject = stream;
+      if (stream.getVideoTracks().length > 0) {
+        document.getElementById('remoteVideo').srcObject = stream;
+        document.getElementById('videoOffline').classList.add('hidden');
+      }
+      startCallUI();
+      addSystemMessage('Connected');
+    });
+
+    call.on('close', () => endCall());
+
+    // Also open a data channel for chat
+    const conn = demoPeer.connect(peerId);
+    if (conn) {
+      dataChannel = conn;
+      setupPeerDataChannel();
+    }
+
+  } catch (e) {
+    console.error(e);
+    addSystemMessage('Mic access required to call');
+  }
+}
+
+/* ============================================================
+   DEMO TIMER
+   ============================================================ */
 
 function startDemoTimer() {
   if (demoInterval) clearInterval(demoInterval);
@@ -400,7 +515,7 @@ function bindAppEvents() {
   });
 
   document.getElementById('startCallBtn').addEventListener('click', () => {
-    showToast('Share your ID with a friend to test', 'info');
+    showToast('Share your demo link with a friend to test', 'info');
   });
   document.getElementById('acceptCallBtn').addEventListener('click', acceptIncomingCall);
   document.getElementById('rejectCallBtn').addEventListener('click', () => {
@@ -437,10 +552,12 @@ async function acceptIncomingCall() {
   if (!currentCall) return;
 
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true },
-      video: false
-    });
+    if (!localStream) {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+        video: false
+      });
+    }
     localStream.getAudioTracks().forEach(t => t.enabled = true);
     currentCall.answer(localStream);
 
@@ -587,12 +704,12 @@ function setConnStatus(t) {
 }
 
 /* ============================================================
-   FILE TRANSFER (1 MB cap)
+   FILE TRANSFER — 1 MB cap
    ============================================================ */
 
 async function sendFile(file) {
   if (file.size > MAX_FILE_SIZE) {
-    showToast('File too large — demo limit is 1 MB', 'error');
+    showToast('Demo limit is 1 MB — upgrade to Pro for unlimited', 'error', 5000);
     return;
   }
 
@@ -746,7 +863,7 @@ function setupMobileTabs() {
 
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-function showToast(msg, type = 'info') {
+function showToast(msg, type = 'info', duration = 3000) {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
   t.className = 'toast ' + type;
@@ -757,7 +874,7 @@ function showToast(msg, type = 'info') {
     t.style.transform = 'translateY(-20px)';
     t.style.transition = 'all .3s';
     setTimeout(() => t.remove(), 300);
-  }, 3000);
+  }, duration);
 }
 
 function cleanup() {
@@ -785,4 +902,4 @@ window.addEventListener('beforeunload', () => {
   if (sessionActive) markDemoUsed();
 });
 
-console.log('SoloDS Demo loaded');
+console.log('SoloDS Free Demo loaded');
