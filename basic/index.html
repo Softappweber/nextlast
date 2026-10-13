@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>SoloDS Basic — Unlimited calling</title>
+<title>SoloDS — Unlimited Calling</title>
 <meta name="description" content="Unlimited voice and video calling. No phone number. No signup. Just a link.">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +11,7 @@
 
 <nav class="nav">
   <div class="nav-inner">
-    <a href="#" class="nav-brand">
+    <div class="nav-brand">
       <div class="brand-mark">
         <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
           <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
@@ -20,8 +20,7 @@
         </svg>
       </div>
       <span class="brand-text">Solo<span class="brand-accent">DS</span></span>
-      <span class="basic-chip">BASIC</span>
-    </a>
+    </div>
     <div class="nav-actions">
       <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="Theme">
         <svg viewBox="0 0 24 24" fill="none">
@@ -33,6 +32,7 @@
   </div>
 </nav>
 
+<!-- THEME POPUP -->
 <div class="theme-popup-overlay" id="themePopup">
   <div class="theme-popup">
     <h3>Choose your theme</h3>
@@ -48,7 +48,36 @@
   </div>
 </div>
 
-<!-- LANDING -->
+<!-- CALLER SCREEN (visitor opened ?call=name) -->
+<section class="screen hidden" id="callerScreen">
+  <div class="container">
+    <div class="caller-card">
+      <div class="caller-halo"></div>
+      <div class="caller-avatar" id="callerAvatar">?</div>
+      <h2 class="caller-name" id="callerName">—</h2>
+      <p class="caller-status" id="callerStatus">Connecting...</p>
+
+      <div class="caller-actions">
+        <button class="caller-call-btn" id="callerCallBtn" type="button" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Voice Call</span>
+        </button>
+        <button class="caller-call-btn caller-video-btn" id="callerVideoBtn" type="button" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Video Call</span>
+        </button>
+      </div>
+
+      <p class="caller-note">You are about to contact <b id="callerTargetName">—</b> via SoloDS.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LANDING (host opens this, no URL param) -->
 <section class="screen" id="landingScreen">
   <div class="container">
 
@@ -60,91 +89,70 @@
           <path d="M2 12L12 17L22 12" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
         </svg>
       </div>
-      <h1>Unlimited <span class="accent">calling</span>.<br>Lifetime access.</h1>
-      <p class="sub">Voice and video calls — no time limits. No phone number. No signup. Just share your link and talk forever.</p>
+      <h1>Unlimited <span class="accent">calling</span>.<br>Just go online.</h1>
+      <p class="sub">Enter your ID and go online. When someone opens your link, your device rings.</p>
     </div>
 
-    <div class="basic-info">
-      <div class="basic-info-head">
+    <div class="info-box">
+      <div class="info-head">
         <span class="dot"></span>
-        YOUR BASIC PLAN
+        HOW TO GO ONLINE
       </div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>Unlimited voice calls</b> — no timer, ever</span></div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>Unlimited video calls</b> — face to face, forever</span></div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>Unlimited messages</b> — no cap</span></div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>File transfer</b> — up to 500 MB per file</span></div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>Own device transfer</b> — phone to PC</span></div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>Screen sharing</b> — 1-click</span></div>
-      <div class="basic-info-row"><span class="check">✓</span><span><b>Works on any device</b> — PC, mobile, tablet</span></div>
+      <div class="info-row"><span class="check">1</span><span>Enter your ID (given by SoloDS admin)</span></div>
+      <div class="info-row"><span class="check">2</span><span>Press <b>Go Online</b></span></div>
+      <div class="info-row"><span class="check">3</span><span>Keep this page open to receive calls</span></div>
     </div>
 
     <div class="name-input-wrap">
-      <input type="text" class="name-input" id="userName" placeholder="Type your name to begin" maxlength="20" autocomplete="off">
+      <input type="text" class="name-input" id="userName" placeholder="Enter your ID" maxlength="30" autocomplete="off">
     </div>
-    <button class="btn-start" id="startBtn" type="button">
-      <span>Start Unlimited Calling</span>
+
+    <button class="btn-start" id="goOnlineBtn" type="button">
+      <span>Go Online</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
         <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
 
-    <!-- SUPERPOWERS -->
-    <div class="landing-superpowers">
-      <div class="sp-head">SUPERPOWERS YOU GET</div>
+    <p class="landing-note">Don't have an ID yet? Contact SoloDS to get one.</p>
 
-      <div class="sp-card">
-        <div class="sp-icon">💻</div>
-        <div class="sp-content">
-          <h4>Take calls on your PC</h4>
-          <p>Using just your mobile link. Phone in pocket, PC rings. No QR, no install.</p>
-        </div>
+    <div class="code-exchange-toggle">
+      <button class="code-toggle-btn" id="codeToggleBtn" type="button">
+        Have a code? Connect manually
+      </button>
+    </div>
+
+    <!-- CODE EXCHANGE (backup, hidden by default) -->
+    <div class="code-exchange hidden" id="codeExchangeBox">
+      <div class="code-exchange-head">Manual Connection (Backup)</div>
+      <p class="code-exchange-sub">If public link doesn't work, use this instead.</p>
+
+      <div class="ce-field">
+        <label>Your offer code</label>
+        <button class="ce-btn" id="genOfferBtn" type="button">Generate offer code</button>
+        <div class="ce-value hidden" id="offerValue"></div>
+        <button class="ce-copy hidden" id="copyOfferBtn" type="button">Copy offer code</button>
       </div>
 
-      <div class="sp-card">
-        <div class="sp-icon">📁</div>
-        <div class="sp-content">
-          <h4>Phone → PC file transfer</h4>
-          <p>Type your own link on any device. Drop a file on one, appears on other. No WhatsApp, no cloud.</p>
-        </div>
+      <div class="ce-field">
+        <label>Paste partner's offer code</label>
+        <textarea class="ce-textarea" id="partnerOffer" placeholder="Paste partner offer code here"></textarea>
+        <button class="ce-btn" id="answerBtn" type="button">Generate answer code</button>
+        <div class="ce-value hidden" id="answerValue"></div>
+        <button class="ce-copy hidden" id="copyAnswerBtn" type="button">Copy answer code</button>
       </div>
 
-      <div class="sp-card">
-        <div class="sp-icon">🖥️</div>
-        <div class="sp-content">
-          <h4>Screen share without install</h4>
-          <p>Share your whole screen in one click. No plugin, no app, no permission maze.</p>
-        </div>
-      </div>
-
-      <div class="sp-card">
-        <div class="sp-icon">🌍</div>
-        <div class="sp-content">
-          <h4>Same link, worldwide</h4>
-          <p>Mumbai to New York — same link works. No SIM lock, no roaming, no country limit.</p>
-        </div>
-      </div>
-
-      <div class="sp-card">
-        <div class="sp-icon">🚫</div>
-        <div class="sp-content">
-          <h4>No Google, no OTP, no number</h4>
-          <p>Zero third-party logins. Nothing to verify. Nothing to leak.</p>
-        </div>
-      </div>
-
-      <div class="sp-card">
-        <div class="sp-icon">⚡</div>
-        <div class="sp-content">
-          <h4>Zero middleman</h4>
-          <p>End-to-end encrypted, device to device. We literally can't see it.</p>
-        </div>
+      <div class="ce-field">
+        <label>Paste partner's answer code</label>
+        <textarea class="ce-textarea" id="partnerAnswer" placeholder="Paste partner answer code here"></textarea>
+        <button class="ce-btn" id="completeBtn" type="button">Complete connection</button>
       </div>
     </div>
 
   </div>
 </section>
 
-<!-- APP -->
+<!-- MAIN APP (3-window) -->
 <section class="screen hidden" id="appScreen" style="padding:0">
   <div class="app-container">
 
@@ -167,17 +175,17 @@
         </div>
       </div>
       <div class="main-topbar-right">
-        <span class="chip basic-chip-inline">UNLIMITED</span>
+        <span class="chip" id="modeChip">ONLINE</span>
       </div>
     </div>
 
     <div class="partner-hero">
       <div class="partner-avatar" id="partnerAvatar">?</div>
       <div class="partner-meta">
-        <p class="partner-label">Signed in as</p>
+        <p class="partner-label" id="partnerLabel">Signed in as</p>
         <h2 class="partner-name" id="partnerNameDisplay">—</h2>
       </div>
-      <span class="chip basic-chip-inline">BASIC</span>
+      <span class="chip" id="roleChip">HOST</span>
     </div>
 
     <div class="main-grid">
@@ -210,7 +218,7 @@
           <span class="chip">UNLIMITED</span>
         </div>
         <div class="call-content">
-          <div class="call-buttons" id="callIdle">
+          <div class="call-buttons hidden" id="callIdle">
             <button class="call-main" id="startCallBtn" type="button">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -242,6 +250,9 @@
           </div>
           <div class="call-status hidden" id="callStatus">
             <span id="callStatusText">Ringing...</span>
+          </div>
+          <div class="call-idle-hint" id="callIdleHint">
+            <p>You are online. When someone calls, your device will ring.</p>
           </div>
         </div>
       </div>
