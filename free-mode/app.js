@@ -237,7 +237,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('backBtn').addEventListener('click', () => {
     if (confirm('End demo and return home?')) {
       cleanup();
-      endDemo('manual');
+      if (isCallerMode) {
+        window.location.href = window.location.pathname;
+      } else {
+        endDemo('manual');
+      }
     }
   });
   document.getElementById('closeThemeModal').addEventListener('click', closeThemeModal);
@@ -249,7 +253,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   bindAppEvents();
 
-  // If caller, auto-join immediately
   if (isCallerMode) {
     autoJoinAsCaller();
   }
@@ -305,7 +308,13 @@ async function autoJoinAsCaller() {
   const banner = document.getElementById('demoBanner');
   if (banner) banner.classList.add('hidden');
 
+  const startCallBtn = document.getElementById('startCallBtn');
+  if (startCallBtn) {
+    startCallBtn.style.display = 'none';
+  }
+
   addSystemMessage('Connecting to ' + targetId + '…');
+  setConnStatus('Requesting microphone…');
 
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -313,17 +322,40 @@ async function autoJoinAsCaller() {
       video: false
     });
     localStream.getAudioTracks().forEach(t => { t.enabled = true; });
+  } catch (e) {
+    console.error('Mic error:', e);
+    addSystemMessage('Microphone access needed to call');
+    setConnStatus('Mic blocked');
+    showToast('Allow microphone and refresh', 'error', 6000);
 
+    const chatPanel = document.querySelector('.panel-chat .chat-messages');
+    if (chatPanel) {
+      const retry = document.createElement('div');
+      retry.className = 'message system';
+      retry.textContent = 'Tap here to retry microphone access';
+      retry.style.cursor = 'pointer';
+      retry.style.textDecoration = 'underline';
+      retry.addEventListener('click', () => {
+        location.reload();
+      });
+      chatPanel.appendChild(retry);
+    }
+    return;
+  }
+
+  setConnStatus('Calling…');
+
+  try {
     const peerId = 'solods-demo-' + targetId;
     const callerPeerId = 'solods-caller-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
 
     demoPeer = new Peer(callerPeerId, { debug: 1, config: ICE_CONFIG });
 
     demoPeer.on('open', () => {
-      setConnStatus('Calling…');
       const call = demoPeer.call(peerId, localStream);
       if (!call) {
         addSystemMessage('Could not reach host');
+        setConnStatus('Offline');
         return;
       }
       currentCall = call;
@@ -343,6 +375,7 @@ async function autoJoinAsCaller() {
       call.on('close', () => {
         endCall();
         addSystemMessage('Call ended');
+        setConnStatus('Offline');
       });
 
       const conn = demoPeer.connect(peerId);
@@ -355,18 +388,19 @@ async function autoJoinAsCaller() {
     demoPeer.on('error', (err) => {
       console.error('Caller peer error:', err);
       if (err.type === 'peer-unavailable') {
-        addSystemMessage('Host is offline');
-        showToast('Host is offline', 'error');
+        addSystemMessage('Host is offline — ask them to start their demo');
+        showToast('Host is offline', 'error', 5000);
         setConnStatus('Offline');
       } else {
-        addSystemMessage('Connection error');
+        addSystemMessage('Connection error: ' + err.type);
+        setConnStatus('Error');
       }
     });
 
   } catch (e) {
     console.error(e);
-    addSystemMessage('Mic access required to call');
-    showToast('Allow microphone to call', 'error');
+    addSystemMessage('Connection failed');
+    setConnStatus('Error');
   }
 }
 
@@ -621,7 +655,13 @@ function endCall() {
 
   document.getElementById('callActive').classList.add('hidden');
   document.getElementById('callButtonsIncoming').classList.add('hidden');
-  document.getElementById('callButtonsIdle').classList.remove('hidden');
+
+  if (!isCallerMode) {
+    document.getElementById('callButtonsIdle').classList.remove('hidden');
+  } else {
+    document.getElementById('callButtonsIdle').classList.add('hidden');
+  }
+
   document.getElementById('callStatus').classList.add('hidden');
   isInCall = false;
 }
