@@ -44,6 +44,7 @@ let sessionActive = false;
 let demoStartTime = 0;
 let demoInterval = null;
 let fingerprint = '';
+let isCallerMode = false;
 
 let incomingFileChunks = [];
 let incomingFileSize = 0;
@@ -218,10 +219,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadTheme();
   setupMobileTabs();
 
-  const status = await checkDemoStatus();
-  if (status.used || status.tamper) {
-    document.getElementById('blockedBox').classList.remove('hidden');
-    document.getElementById('startBox').classList.add('hidden');
+  const params = new URLSearchParams(window.location.search);
+  isCallerMode = !!params.get('call');
+
+  if (!isCallerMode) {
+    const status = await checkDemoStatus();
+    if (status.used || status.tamper) {
+      document.getElementById('blockedBox').classList.remove('hidden');
+      document.getElementById('startBox').classList.add('hidden');
+    }
   }
 
   document.getElementById('startBtn').addEventListener('click', startDemo);
@@ -242,6 +248,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   bindAppEvents();
+
+  // If caller, auto-join immediately
+  if (isCallerMode) {
+    autoJoinAsCaller();
+  }
 });
 
 /* ============================================================
@@ -278,7 +289,89 @@ document.querySelectorAll('.theme-option').forEach(btn => {
 });
 
 /* ============================================================
-   START DEMO
+   CALLER AUTO-JOIN
+   ============================================================ */
+
+async function autoJoinAsCaller() {
+  const params = new URLSearchParams(window.location.search);
+  const targetId = (params.get('call') || '').trim().toLowerCase();
+  if (!targetId) return;
+
+  document.getElementById('landingScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+  document.getElementById('partnerNameDisplay').textContent = 'Caller';
+  document.getElementById('partnerAvatar').textContent = 'C';
+
+  const banner = document.getElementById('demoBanner');
+  if (banner) banner.classList.add('hidden');
+
+  addSystemMessage('Connecting to ' + targetId + '…');
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true },
+      video: false
+    });
+    localStream.getAudioTracks().forEach(t => { t.enabled = true; });
+
+    const peerId = 'solods-demo-' + targetId;
+    const callerPeerId = 'solods-caller-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+
+    demoPeer = new Peer(callerPeerId, { debug: 1, config: ICE_CONFIG });
+
+    demoPeer.on('open', () => {
+      setConnStatus('Calling…');
+      const call = demoPeer.call(peerId, localStream);
+      if (!call) {
+        addSystemMessage('Could not reach host');
+        return;
+      }
+      currentCall = call;
+
+      call.on('stream', (stream) => {
+        remoteStream = stream;
+        document.getElementById('remoteAudio').srcObject = stream;
+        if (stream.getVideoTracks().length > 0) {
+          document.getElementById('remoteVideo').srcObject = stream;
+          document.getElementById('videoOffline').classList.add('hidden');
+        }
+        startCallUI();
+        addSystemMessage('Connected');
+        setConnStatus('Connected');
+      });
+
+      call.on('close', () => {
+        endCall();
+        addSystemMessage('Call ended');
+      });
+
+      const conn = demoPeer.connect(peerId);
+      if (conn) {
+        dataChannel = conn;
+        setupPeerDataChannel();
+      }
+    });
+
+    demoPeer.on('error', (err) => {
+      console.error('Caller peer error:', err);
+      if (err.type === 'peer-unavailable') {
+        addSystemMessage('Host is offline');
+        showToast('Host is offline', 'error');
+        setConnStatus('Offline');
+      } else {
+        addSystemMessage('Connection error');
+      }
+    });
+
+  } catch (e) {
+    console.error(e);
+    addSystemMessage('Mic access required to call');
+    showToast('Allow microphone to call', 'error');
+  }
+}
+
+/* ============================================================
+   START DEMO (HOST)
    ============================================================ */
 
 async function startDemo() {
@@ -352,64 +445,9 @@ async function startDemo() {
       setupPeerDataChannel();
     });
 
-    handleCallerMode();
-
   } catch (e) {
     console.error(e);
     addSystemMessage('Connection failed. Try refreshing.');
-  }
-}
-
-/* ============================================================
-   CALLER MODE
-   ============================================================ */
-
-async function handleCallerMode() {
-  const params = new URLSearchParams(window.location.search);
-  const targetId = (params.get('call') || '').trim().toLowerCase();
-  if (!targetId) return;
-
-  addSystemMessage('Joining as caller…');
-
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true },
-      video: false
-    });
-    localStream.getAudioTracks().forEach(t => { t.enabled = true; });
-
-    const peerId = 'solods-demo-' + targetId;
-    const call = demoPeer.call(peerId, localStream);
-
-    if (!call) {
-      addSystemMessage('Could not reach host');
-      return;
-    }
-
-    currentCall = call;
-
-    call.on('stream', (stream) => {
-      remoteStream = stream;
-      document.getElementById('remoteAudio').srcObject = stream;
-      if (stream.getVideoTracks().length > 0) {
-        document.getElementById('remoteVideo').srcObject = stream;
-        document.getElementById('videoOffline').classList.add('hidden');
-      }
-      startCallUI();
-      addSystemMessage('Connected');
-    });
-
-    call.on('close', () => endCall());
-
-    const conn = demoPeer.connect(peerId);
-    if (conn) {
-      dataChannel = conn;
-      setupPeerDataChannel();
-    }
-
-  } catch (e) {
-    console.error(e);
-    addSystemMessage('Mic access required to call');
   }
 }
 
@@ -912,7 +950,7 @@ function cleanup() {
 }
 
 window.addEventListener('beforeunload', () => {
-  if (sessionActive) markDemoUsed();
+  if (sessionActive && !isCallerMode) markDemoUsed();
 });
 
 console.log('SoloDS Free Demo loaded');
