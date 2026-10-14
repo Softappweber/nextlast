@@ -320,18 +320,18 @@ async function startDemo() {
   document.getElementById('partnerAvatar').textContent = myName.charAt(0).toUpperCase();
   document.getElementById('demoBanner').classList.remove('hidden');
 
-  // Show shareable link in chat
+    // Build shareable link
   const shareUrl = window.location.origin + window.location.pathname + '?call=' + demoSessionId;
-  addSystemMessage('Demo started — 5 minutes');
-  addSystemMessage('Send this link to a friend to test:');
-  addSystemMessage(shareUrl);
 
-  // Copy to clipboard automatically
+  // Show a big, dark, copy-friendly ID block in the chat
+  addShareIdBlock(demoSessionId, shareUrl);
+
+  // Auto-copy the full link
   try {
     await navigator.clipboard.writeText(shareUrl);
     showToast('Demo link copied — send to your friend', 'success', 5000);
   } catch (e) {
-    showToast('Copy the demo link from chat', 'info', 4000);
+    showToast('Tap the ID box to copy', 'info', 4000);
   }
 
   demoStartTime = Date.now();
@@ -377,6 +377,20 @@ async function startDemo() {
     addSystemMessage('Connection failed. Try refreshing.');
   }
 }
+
+  // Build shareable link
+  const shareUrl = window.location.origin + window.location.pathname + '?call=' + demoSessionId;
+
+  // Show a big, dark, copy-friendly ID block in the chat
+  addShareIdBlock(demoSessionId, shareUrl);
+
+  // Auto-copy the full link
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showToast('Demo link copied — send to your friend', 'success', 5000);
+  } catch (e) {
+    showToast('Tap the ID box to copy', 'info', 4000);
+  }
 
 /* ============================================================
    CALLER MODE — friend opens ?call=<id>
