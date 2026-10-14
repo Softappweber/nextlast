@@ -4,22 +4,13 @@
    Upgrade → https://softappweber.github.io/nextlast/website/
    ============================================================ */
 
-/* ============================================================
-   DEV BYPASS — set true only while you are testing.
-   When launching to real users: false.
-   ============================================================ */
-
 const DEV_BYPASS = false;
-
-/* ============================================================
-   CONFIG
-   ============================================================ */
 
 const DEMO_LIMIT_SECONDS = 5 * 60;
 const DEMO_STORAGE_KEY = 'solods_demo_v1';
 const DEMO_DB_NAME = 'solods_demo_db';
 const DEMO_COOKIE_NAME = 'solods_demo_fp';
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024;
 const CHUNK_SIZE = 16 * 1024;
 const UPGRADE_URL = 'https://softappweber.github.io/nextlast/website/';
 
@@ -32,10 +23,6 @@ const ICE_CONFIG = {
     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
   ]
 };
-
-/* ============================================================
-   STATE
-   ============================================================ */
 
 let myName = '';
 let demoSessionId = '';
@@ -177,7 +164,7 @@ function getCookie(name) {
 }
 
 /* ============================================================
-   DEMO STATE — DEV_BYPASS aware
+   DEMO STATE
    ============================================================ */
 
 async function checkDemoStatus() {
@@ -291,7 +278,7 @@ document.querySelectorAll('.theme-option').forEach(btn => {
 });
 
 /* ============================================================
-   START DEMO — generates shareable session ID
+   START DEMO
    ============================================================ */
 
 async function startDemo() {
@@ -310,7 +297,6 @@ async function startDemo() {
     return;
   }
 
-  // Generate short shareable session ID
   const tag = Math.random().toString(36).substring(2, 6);
   demoSessionId = myName + '-' + tag;
 
@@ -320,13 +306,10 @@ async function startDemo() {
   document.getElementById('partnerAvatar').textContent = myName.charAt(0).toUpperCase();
   document.getElementById('demoBanner').classList.remove('hidden');
 
-    // Build shareable link
   const shareUrl = window.location.origin + window.location.pathname + '?call=' + demoSessionId;
 
-  // Show a big, dark, copy-friendly ID block in the chat
   addShareIdBlock(demoSessionId, shareUrl);
 
-  // Auto-copy the full link
   try {
     await navigator.clipboard.writeText(shareUrl);
     showToast('Demo link copied — send to your friend', 'success', 5000);
@@ -369,7 +352,6 @@ async function startDemo() {
       setupPeerDataChannel();
     });
 
-    // Caller-side: if URL has ?call=X, initiate call automatically
     handleCallerMode();
 
   } catch (e) {
@@ -378,22 +360,8 @@ async function startDemo() {
   }
 }
 
-  // Build shareable link
-  const shareUrl = window.location.origin + window.location.pathname + '?call=' + demoSessionId;
-
-  // Show a big, dark, copy-friendly ID block in the chat
-  addShareIdBlock(demoSessionId, shareUrl);
-
-  // Auto-copy the full link
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    showToast('Demo link copied — send to your friend', 'success', 5000);
-  } catch (e) {
-    showToast('Tap the ID box to copy', 'info', 4000);
-  }
-
 /* ============================================================
-   CALLER MODE — friend opens ?call=<id>
+   CALLER MODE
    ============================================================ */
 
 async function handleCallerMode() {
@@ -401,7 +369,6 @@ async function handleCallerMode() {
   const targetId = (params.get('call') || '').trim().toLowerCase();
   if (!targetId) return;
 
-  // We are the caller. Wait for peer to be ready, then place call.
   addSystemMessage('Joining as caller…');
 
   try {
@@ -434,7 +401,6 @@ async function handleCallerMode() {
 
     call.on('close', () => endCall());
 
-    // Also open a data channel for chat
     const conn = demoPeer.connect(peerId);
     if (conn) {
       dataChannel = conn;
@@ -715,6 +681,39 @@ function addSystemMessage(text) {
 
 function setConnStatus(t) {
   document.getElementById('connText').textContent = t;
+}
+
+/* ============================================================
+   SHARE ID BLOCK
+   ============================================================ */
+
+function addShareIdBlock(id, fullUrl) {
+  const cm = document.getElementById('chatMessages');
+  const block = document.createElement('div');
+  block.className = 'share-id-block';
+  block.innerHTML = `
+    <div class="share-id-label">YOUR DEMO ID</div>
+    <div class="share-id-value">${esc(id)}</div>
+    <div class="share-id-hint">Tap to copy · Send to a friend</div>
+  `;
+
+  block.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      showToast('Link copied', 'success', 2000);
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = fullUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Link copied', 'success', 2000);
+    }
+  });
+
+  cm.appendChild(block);
+  cm.scrollTop = cm.scrollHeight;
 }
 
 /* ============================================================
