@@ -1,6 +1,7 @@
 /* ============================================================
    SoloDS NextLast v20 — Round 1 final
-   Bug fixes + contacts sidebar + name modal + URL caller fix
+   Fixes: caller data channel, showHome crash, Tenor GIFs,
+          ICE cap at 4 servers, video bitrate lookup
    ============================================================ */
 
 /* ============================================================
@@ -14,11 +15,8 @@ const CONFIG = {
   OPENRELAY_FALLBACK: {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
     ],
     iceCandidatePoolSize: 10
   },
@@ -29,8 +27,8 @@ const CONFIG = {
   VANISH_TTL_MS: 15000,
   CAPTION_LANG: 'en-US',
 
-  GIPHY_KEY: 'dc6zaTOxFJmzC',
-  GIPHY_BASE: 'https://api.giphy.com/v1/gifs',
+  TENOR_KEY: 'LIVDSRZULELA',
+  TENOR_BASE: 'https://g.tenor.com/v1',
 
   VIDEO_MAX_BITRATE: 2500000,
   VIDEO_IDEAL_WIDTH: 1280,
@@ -81,6 +79,7 @@ let isCallerMode = false;
 let callerTargetName = '';
 let callerTargetSlug = '';
 let callerPeer = null;
+let callerConn = null;
 
 let incomingFileChunks = [];
 let incomingFileSize = 0;
@@ -287,11 +286,9 @@ const stickerGrid = $('stickerGrid');
 
 /* ============================================================
    BOOT
-   Runs URL check FIRST so caller screen appears immediately.
    ============================================================ */
 
 window.addEventListener('DOMContentLoaded', () => {
-  // 1. UI setup (sync, fast)
   loadTheme();
   setupMobileTabs();
   setupV19UI();
@@ -302,10 +299,8 @@ window.addEventListener('DOMContentLoaded', () => {
     stickerPanel.style.display = '';
   }
 
-  // 2. URL check — MUST run before any async work
   checkPublicLinkInURL();
 
-  // 3. Fetch TURN credentials in the background
   fetchIceConfig().then(cfg => {
     ICE_CONFIG = cfg;
     console.log('[TURN] ready');
@@ -316,43 +311,31 @@ window.addEventListener('DOMContentLoaded', () => {
   console.log('SoloDS NextLast v20 loaded');
 });
 
-/**
- * Check ?call=slug in the URL.
- * If present, force caller screen visible IMMEDIATELY, then wire it up.
- * Slug is normalized: lowercase, alphanumeric only.
- */
 function checkPublicLinkInURL() {
   const params = new URLSearchParams(window.location.search);
   const hash = window.location.hash;
 
   let raw = params.get('call');
-  if (!raw && hash.startsWith('#call=')) {
-    raw = hash.substring(6);
-  }
+  if (!raw && hash.startsWith('#call=')) raw = hash.substring(6);
 
   console.log('[url-check] raw slug:', JSON.stringify(raw));
-
   if (!raw) return;
 
   const slug = String(raw).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
   console.log('[url-check] normalized slug:', JSON.stringify(slug));
-
   if (!slug) return;
 
-  // Force caller screen visible before anything else
   homeScreen.classList.add('hidden');
   landingScreen.classList.add('hidden');
   connectingScreen.classList.add('hidden');
   mainScreen.classList.add('hidden');
   callerScreen.classList.remove('hidden');
 
-  // Pre-fill caller UI immediately (visible before Peer even starts)
   if (callerAvatar) callerAvatar.textContent = slug.charAt(0).toUpperCase();
   if (callerName) callerName.textContent = slug;
   if (callerTargetNameEl) callerTargetNameEl.textContent = slug;
   if (callerStatus) callerStatus.textContent = 'Connecting…';
 
-  // Now do the real setup (creates Peer, registers callbacks)
   enterCallerMode(slug);
 }
 
@@ -367,19 +350,26 @@ async function fetchIceConfig() {
 
     let iceServers;
     if (Array.isArray(data.iceServers) && data.iceServers.length) {
-      iceServers = data.iceServers;
+      iceServers = data.iceServers.slice();
     } else if (data.urls) {
       iceServers = [{ urls: data.urls, username: data.username, credential: data.credential }];
     } else {
       throw new Error('TURN payload missing');
     }
 
-    iceServers = [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      ...iceServers
-    ];
-    console.log('[TURN] Cloudflare credentials loaded');
+    // Only add Google STUN if Cloudflare didn't include any
+    const hasStun = iceServers.some(s => {
+      const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
+      return urls.some(u => typeof u === 'string' && u.startsWith('stun:'));
+    });
+    if (!hasStun) {
+      iceServers.unshift({ urls: 'stun:stun.l.google.com:19302' });
+    }
+
+    // Cap at 4 to avoid the "5+ servers slows ICE" warning
+    iceServers = iceServers.slice(0, 4);
+
+    console.log('[TURN] Cloudflare credentials loaded — ' + iceServers.length + ' servers');
     return { iceServers, iceCandidatePoolSize: 10 };
   } catch (e) {
     console.warn('[TURN] Cloudflare fetch failed, using OpenRelay:', e.message);
@@ -633,6 +623,7 @@ async function goOnline() {
     });
 
     myPublicPeer.on('connection', (conn) => {
+      console.log('[host] incoming data channel');
       dataChannel = conn;
       setupPeerDataChannel();
     });
@@ -733,7 +724,7 @@ function showHome() {
   connectingScreen.classList.add('hidden');
   mainScreen.classList.add('hidden');
   callerScreen.classList.add('hidden');
-  loadContacts();
+  // NOTE: no loadContacts() call — contacts list lives in sidebar now
 }
 
 function showLanding() {
@@ -756,7 +747,6 @@ function showLanding() {
    ============================================================ */
 
 function enterCallerMode(targetSlug) {
-  // Defensive normalization
   targetSlug = String(targetSlug || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
   if (!targetSlug) {
     console.warn('[caller] empty slug, aborting');
@@ -785,6 +775,10 @@ function enterCallerMode(targetSlug) {
     callerStatus.textContent = 'Ready to call';
     callerCallBtn.disabled = false;
     callerVideoBtn.disabled = false;
+
+    // Also open the data channel to the host immediately.
+    // The host needs this so chat works even before a call starts.
+    openCallerDataChannel();
   });
 
   callerPeer.on('error', (err) => {
@@ -795,6 +789,45 @@ function enterCallerMode(targetSlug) {
     } else {
       callerStatus.textContent = 'Connection error';
     }
+  });
+}
+
+/**
+ * Open a data channel from the caller to the host.
+ * This is what makes chat/emoji/files work in link mode.
+ */
+function openCallerDataChannel() {
+  if (!callerPeer || !callerTargetSlug) return;
+  if (callerConn && callerConn.open) return;
+
+  const peerId = 'solods-' + callerTargetSlug;
+  console.log('[caller] opening data channel to', peerId);
+
+  callerConn = callerPeer.connect(peerId, { reliable: true });
+
+  callerConn.on('open', () => {
+    console.log('[caller] data channel open');
+    dataChannel = callerConn;
+
+    callerConn.on('data', (data) => {
+      try {
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        handleDataMessage(parsed);
+      } catch {
+        addMessage(data, 'received');
+      }
+    });
+
+    callerConn.on('close', () => {
+      console.log('[caller] data channel closed');
+      addSystemMessage('Chat disconnected');
+    });
+
+    addSystemMessage('Chat ready');
+  });
+
+  callerConn.on('error', (e) => {
+    console.warn('[caller-conn] error', e);
   });
 }
 
@@ -828,6 +861,9 @@ async function startCallAsCaller(withVideo) {
       callerStatus.textContent = 'Call failed';
       return;
     }
+
+    // Ensure data channel is open (may already be, from callerPeer.on('open'))
+    openCallerDataChannel();
 
     incomingPeerCall = call;
 
@@ -866,6 +902,7 @@ async function startCallAsCaller(withVideo) {
 }
 
 callerCancelBtn.addEventListener('click', () => {
+  if (callerConn) { try { callerConn.close(); } catch {} callerConn = null; }
   if (callerPeer) { try { callerPeer.destroy(); } catch {} callerPeer = null; }
   if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
   isCallerMode = false;
@@ -942,15 +979,18 @@ incomingRejectBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
-   PEER DATA CHANNEL
+   PEER DATA CHANNEL (host side)
    ============================================================ */
 
 function setupPeerDataChannel() {
   if (!dataChannel) return;
+
   dataChannel.on('open', () => {
+    console.log('[host] data channel open');
     addSystemMessage('Chat ready');
     if (!isOnline) switchToMainScreen({ showSaveContact: false });
   });
+
   dataChannel.on('data', (data) => {
     try {
       const parsed = typeof data === 'string' ? JSON.parse(data) : data;
@@ -959,6 +999,7 @@ function setupPeerDataChannel() {
       addMessage(data, 'received');
     }
   });
+
   dataChannel.on('close', () => addSystemMessage('Connection closed'));
 }
 
@@ -1523,7 +1564,7 @@ finishBtn.addEventListener('click', async () => {
 });
 
 /* ============================================================
-   WEBRTC PEER CONNECTION
+   WEBRTC PEER CONNECTION (manual code flow)
    ============================================================ */
 
 function createPeerConnection() {
@@ -1598,23 +1639,29 @@ function waitForIceGathering() {
 }
 
 function applyVideoBitrate() {
-  const pc = peerConnection || incomingPeerCall?.peerConnection;
-  if (!pc) return;
-  try {
-    const senders = pc.getSenders();
-    const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-    if (!videoSender) return;
-    const params = videoSender.getParameters();
-    if (!params.encodings || !params.encodings.length) {
-      params.encodings = [{}];
+  const candidates = [
+    peerConnection,
+    incomingPeerCall?.peerConnection,
+    dataChannel?.peerConnection,
+    dataChannel?._pc
+  ].filter(Boolean);
+
+  for (const pc of candidates) {
+    try {
+      const videoSender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (!videoSender) continue;
+      const params = videoSender.getParameters();
+      if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+      params.encodings[0].maxBitrate = CONFIG.VIDEO_MAX_BITRATE;
+      videoSender.setParameters(params);
+      videoSenderRef = videoSender;
+      console.log('[video] maxBitrate set to', CONFIG.VIDEO_MAX_BITRATE);
+      return;
+    } catch (e) {
+      // try next pc
     }
-    params.encodings[0].maxBitrate = CONFIG.VIDEO_MAX_BITRATE;
-    videoSender.setParameters(params);
-    videoSenderRef = videoSender;
-    console.log('[video] maxBitrate set to', CONFIG.VIDEO_MAX_BITRATE);
-  } catch (e) {
-    console.warn('[video] bitrate apply failed', e);
   }
+  console.warn('[video] no video sender found');
 }
 
 /* ============================================================
@@ -2154,6 +2201,8 @@ toggleVideoBtn.addEventListener('click', async () => {
       if (peerConnection) peerConnection.addTrack(videoTrack, localStream);
       else if (incomingPeerCall && incomingPeerCall.peerConnection) {
         incomingPeerCall.peerConnection.addTrack(videoTrack, localStream);
+      } else if (dataChannel && dataChannel.peerConnection) {
+        dataChannel.peerConnection.addTrack(videoTrack, localStream);
       }
 
       localVideo.srcObject = localStream;
@@ -2254,6 +2303,7 @@ function cleanup() {
   if (screenStream) screenStream.getTracks().forEach(t => t.stop());
   if (peerConnection) { try { peerConnection.close(); } catch {} }
   if (incomingPeerCall) { try { incomingPeerCall.close(); } catch {} }
+  if (callerConn) { try { callerConn.close(); } catch {} callerConn = null; }
   if (callTimerInterval) clearInterval(callTimerInterval);
   stopRingtone();
 
@@ -2639,7 +2689,7 @@ function renderEmojiGrid(cat) {
 }
 
 /* ============================================================
-   GIF SEARCH (Giphy)
+   GIF SEARCH (Tenor)
    ============================================================ */
 
 function toggleGifPanel() {
@@ -2660,11 +2710,11 @@ async function loadTrendingGifs() {
   if (!gifResults) return;
   gifResults.innerHTML = '<div class="gif-loading">Loading trending…</div>';
   try {
-    const url = `${CONFIG.GIPHY_BASE}/trending?api_key=${CONFIG.GIPHY_KEY}&limit=20`;
+    const url = `${CONFIG.TENOR_BASE}/trending?key=${CONFIG.TENOR_KEY}&limit=20`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Giphy ' + res.status);
+    if (!res.ok) throw new Error('Tenor ' + res.status);
     const data = await res.json();
-    renderGifResults(data.data || []);
+    renderGifResults(data.results || []);
     gifResults.dataset.loaded = '1';
   } catch (e) {
     console.warn('[gif] trending failed', e);
@@ -2676,11 +2726,11 @@ async function searchGifs(query) {
   if (!gifResults) return;
   gifResults.innerHTML = '<div class="gif-loading">Searching…</div>';
   try {
-    const url = `${CONFIG.GIPHY_BASE}/search?api_key=${CONFIG.GIPHY_KEY}&q=${encodeURIComponent(query)}&limit=20`;
+    const url = `${CONFIG.TENOR_BASE}/search?key=${CONFIG.TENOR_KEY}&q=${encodeURIComponent(query)}&limit=20`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Giphy ' + res.status);
+    if (!res.ok) throw new Error('Tenor ' + res.status);
     const data = await res.json();
-    renderGifResults(data.data || []);
+    renderGifResults(data.results || []);
   } catch (e) {
     console.warn('[gif] search failed', e);
     gifResults.innerHTML = '<div class="gif-empty">Search failed.</div>';
@@ -2693,12 +2743,11 @@ function renderGifResults(results) {
     gifResults.innerHTML = '<div class="gif-empty">No GIFs found.</div>';
     return;
   }
-
   results.forEach(g => {
-    const preview = g.images?.fixed_height?.url || g.images?.fixed_height_small?.url;
-    const full = g.images?.original?.url || preview;
+    const media = g.media?.[0] || {};
+    const preview = media.tinygif?.url || media.gif?.url;
+    const full = media.gif?.url || preview;
     if (!full || !preview) return;
-
     const item = document.createElement('div');
     item.className = 'gif-item';
     item.innerHTML = `<img src="${preview}" alt="gif" loading="lazy">`;
@@ -2759,7 +2808,7 @@ function addGifMessage(data, direction) {
 }
 
 /* ============================================================
-   STICKERS
+   STICKERS (disabled by default)
    ============================================================ */
 
 const STICKER_DATA = {
