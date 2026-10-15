@@ -1,6 +1,6 @@
 /* ============================================================
-   SoloDS NextLast v19 — Round 1
-   Bug fixes + contacts sidebar + name modal
+   SoloDS NextLast v20 — Round 1 final
+   Bug fixes + contacts sidebar + name modal + URL caller fix
    ============================================================ */
 
 /* ============================================================
@@ -29,7 +29,6 @@ const CONFIG = {
   VANISH_TTL_MS: 15000,
   CAPTION_LANG: 'en-US',
 
-  // Giphy public beta key (well-known, safe for browser use)
   GIPHY_KEY: 'dc6zaTOxFJmzC',
   GIPHY_BASE: 'https://api.giphy.com/v1/gifs',
 
@@ -46,7 +45,7 @@ const CONFIG = {
     callReactions: true,
     richEmoji: true,
     gifs: true,
-    stickers: false   // flip true when sticker files exist in /stickers/
+    stickers: false
   }
 };
 
@@ -106,7 +105,6 @@ let currentEmojiCat = 'smileys';
 let currentStickerCat = 'reactions';
 let gifSearchTimer = null;
 
-// Contacts & modal state
 let contacts = [];
 let activeContactId = null;
 let editingContactId = null;
@@ -289,9 +287,11 @@ const stickerGrid = $('stickerGrid');
 
 /* ============================================================
    BOOT
+   Runs URL check FIRST so caller screen appears immediately.
    ============================================================ */
 
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', () => {
+  // 1. UI setup (sync, fast)
   loadTheme();
   loadContacts();
   setupMobileTabs();
@@ -303,11 +303,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     stickerPanel.style.display = '';
   }
 
-  // CRITICAL: check ?call= BEFORE awaiting TURN.
-  // Otherwise the caller screen doesn't appear until TURN resolves.
+  // 2. URL check — MUST run before any async work
   checkPublicLinkInURL();
 
-  // Fetch ICE in the background — caller screen already shows.
+  // 3. Fetch TURN credentials in the background
   fetchIceConfig().then(cfg => {
     ICE_CONFIG = cfg;
     console.log('[TURN] ready');
@@ -317,6 +316,46 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   console.log('SoloDS NextLast v20 loaded');
 });
+
+/**
+ * Check ?call=slug in the URL.
+ * If present, force caller screen visible IMMEDIATELY, then wire it up.
+ * Slug is normalized: lowercase, alphanumeric only.
+ */
+function checkPublicLinkInURL() {
+  const params = new URLSearchParams(window.location.search);
+  const hash = window.location.hash;
+
+  let raw = params.get('call');
+  if (!raw && hash.startsWith('#call=')) {
+    raw = hash.substring(6);
+  }
+
+  console.log('[url-check] raw slug:', JSON.stringify(raw));
+
+  if (!raw) return;
+
+  const slug = String(raw).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  console.log('[url-check] normalized slug:', JSON.stringify(slug));
+
+  if (!slug) return;
+
+  // Force caller screen visible before anything else
+  homeScreen.classList.add('hidden');
+  landingScreen.classList.add('hidden');
+  connectingScreen.classList.add('hidden');
+  mainScreen.classList.add('hidden');
+  callerScreen.classList.remove('hidden');
+
+  // Pre-fill caller UI immediately (visible before Peer even starts)
+  if (callerAvatar) callerAvatar.textContent = slug.charAt(0).toUpperCase();
+  if (callerName) callerName.textContent = slug;
+  if (callerTargetNameEl) callerTargetNameEl.textContent = slug;
+  if (callerStatus) callerStatus.textContent = 'Connecting…';
+
+  // Now do the real setup (creates Peer, registers callbacks)
+  enterCallerMode(slug);
+}
 
 async function fetchIceConfig() {
   try {
@@ -536,36 +575,7 @@ nameModalInput?.addEventListener('keydown', (e) => {
 });
 
 /* ============================================================
-   PUBLIC LINK ENTRY
-   ============================================================ */
-
-function checkPublicLinkInURL() {
-  const params = new URLSearchParams(window.location.search);
-  const hash = window.location.hash;
-  let targetSlug = params.get('call');
-  if (!targetSlug && hash.startsWith('#call=')) {
-    targetSlug = hash.substring(6);
-  }
-  if (targetSlug) {
-    // Normalize: lowercase, strip anything not a-z0-9
-    targetSlug = targetSlug.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!targetSlug) return;
-
-    // Force caller screen visible IMMEDIATELY, before any async work
-    homeScreen.classList.add('hidden');
-    landingScreen.classList.add('hidden');
-    connectingScreen.classList.add('hidden');
-    mainScreen.classList.add('hidden');
-    callerScreen.classList.remove('hidden');
-
-    // Then do the real enterCallerMode work (Peer creation etc.)
-    // Wait until ICE is likely ready OR proceed with fallback.
-    enterCallerMode(targetSlug);
-  }
-}
-
-/* ============================================================
-   GO ONLINE (with proper name modal)
+   GO ONLINE
    ============================================================ */
 
 goOnlineBtn.addEventListener('click', async () => {
@@ -579,16 +589,13 @@ goOnlineBtn.addEventListener('click', async () => {
 async function goOnline() {
   let name = localStorage.getItem('solods_myname') || '';
 
-  // Always show modal — prefill if we have a stored name
   const entered = await openNameModal({
     title: name ? 'Confirm your name' : 'Your name',
-    sub: name
-      ? 'Your stored name is below. Change it or continue.'
-      : 'This is how others will see you when they open your link.',
+    sub: name ? 'Your stored name is below.' : 'This is how others will see you.',
     prefill: name
   });
 
-  if (!entered) return; // user cancelled
+  if (!entered) return;
 
   name = entered.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
   if (!name || name.length < 2) {
@@ -616,7 +623,6 @@ async function goOnline() {
 
       showToast('You are online as ' + myPublicSlug, 'success');
 
-      // Jump to main screen — show YOUR name
       partnerName = myPublicSlug;
       switchToMainScreen({ showSaveContact: false, selfView: true });
     });
@@ -705,13 +711,10 @@ function switchToMainScreen({ showSaveContact = true, selfView = false } = {}) {
   partnerNameDisplay.textContent = displayName;
   partnerAvatar.textContent = (displayName || '?').charAt(0).toUpperCase();
 
-  // Update the label above the name
   const partnerLabel = document.querySelector('.partner-label');
   if (partnerLabel) {
     partnerLabel.textContent = selfView ? 'Signed in as' : 'Connected with';
   }
-
-  // "Signed in as" already comes from HTML but ensure it's right
 
   if (window.innerWidth <= 900) {
     document.querySelector('.panel-chat')?.classList.add('active-panel');
@@ -752,7 +755,9 @@ function showLanding() {
 /* ============================================================
    CALLER MODE
    ============================================================ */
+
 function enterCallerMode(targetSlug) {
+  // Defensive normalization
   targetSlug = String(targetSlug || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
   if (!targetSlug) {
     console.warn('[caller] empty slug, aborting');
@@ -996,7 +1001,6 @@ function renderContactsSidebar() {
   contactsSidebarEmpty.classList.add('hidden');
   contactsSidebarList.innerHTML = '';
 
-  // Sort: most recently updated first
   const sorted = [...contacts].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
   sorted.forEach(c => {
@@ -1004,9 +1008,8 @@ function renderContactsSidebar() {
     item.className = 'sidebar-contact';
     item.dataset.id = c.id;
 
-    const avatar = avatarFor(c);
     const imgTag = c.image
-      ? `<img src="${escapeHtml(c.image)}" alt="" onerror="this.style.display='none';this.parentNode.textContent='${escapeHtml((c.name || '?')[0].toUpperCase())}'">`
+      ? `<img src="${escapeHtml(c.image)}" alt="">`
       : escapeHtml((c.name || '?').charAt(0).toUpperCase());
 
     item.innerHTML = `
@@ -1025,20 +1028,6 @@ function renderContactsSidebar() {
 function shortenUrl(url) {
   if (!url) return '';
   return url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
-}
-
-/**
- * Deterministic auto-avatar color from URL slug.
- * Returns the color pair for gradient (as CSS string).
- */
-function avatarFor(contact) {
-  // Simple deterministic hue from the URL string
-  const s = contact.url || contact.name || '';
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
-  const hue1 = Math.abs(hash) % 360;
-  const hue2 = (hue1 + 40) % 360;
-  return `linear-gradient(135deg, hsl(${hue1} 70% 60%), hsl(${hue2} 70% 55%))`;
 }
 
 /* ============================================================
@@ -1115,7 +1104,6 @@ function openContactDetail(id) {
   if (!c) return;
   activeContactId = id;
 
-  contactDetailAvatar.textContent = (c.name || '?').charAt(0).toUpperCase();
   if (c.image) {
     contactDetailAvatar.innerHTML = `<img src="${escapeHtml(c.image)}" alt="">`;
   } else {
@@ -1125,7 +1113,6 @@ function openContactDetail(id) {
   contactDetailName.textContent = c.name;
   contactDetailUrl.textContent = c.url;
 
-  // Show "Call" only if the URL contains a recognizable SoloDS slug
   const slug = extractSlug(c.url);
   if (slug) {
     contactDetailCallBtn.style.display = '';
@@ -1137,12 +1124,10 @@ function openContactDetail(id) {
 }
 
 function extractSlug(url) {
-  // Looks for last path segment, e.g. tinyurl.com/sushant → "sushant"
   try {
     const u = new URL(url.startsWith('http') ? url : 'https://' + url);
     const seg = u.pathname.split('/').filter(Boolean).pop();
     if (!seg) return null;
-    // Basic slug sanity: alphanumeric, dashes, underscores, 2-30 chars
     if (/^[a-z0-9_-]{2,30}$/i.test(seg)) return seg.toLowerCase();
     return null;
   } catch {
@@ -1307,7 +1292,6 @@ contactsImportInput?.addEventListener('change', (e) => {
       const incoming = Array.isArray(parsed) ? parsed : parsed.contacts;
       if (!Array.isArray(incoming)) throw new Error('Bad format');
 
-      // Merge: existing kept, incoming added/updated by (name, url)
       const existing = loadContactsFromStorage();
       const byKey = new Map();
       [...existing, ...incoming].forEach(c => {
@@ -1335,12 +1319,7 @@ contactsImportInput?.addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-/* ============================================================
-   SETUP CONTACTS UI (wiring that needs to run on boot)
-   ============================================================ */
-
 function setupContactsUI() {
-  // Initial render so sidebar is ready when opened
   contacts = loadContactsFromStorage();
 }
 
@@ -1578,7 +1557,6 @@ function createPeerConnection() {
       remoteStream.addTrack(event.track);
       remoteVideo.srcObject = remoteStream;
       videoOffline.classList.add('hidden');
-      // Apply bitrate limit as soon as a video sender exists
       setTimeout(applyVideoBitrate, 500);
     }
   };
@@ -1620,10 +1598,6 @@ function waitForIceGathering() {
   });
 }
 
-/**
- * Apply high-bitrate cap on the outgoing video sender.
- * Fixes poor video quality on most networks.
- */
 function applyVideoBitrate() {
   const pc = peerConnection || incomingPeerCall?.peerConnection;
   if (!pc) return;
@@ -1694,7 +1668,7 @@ function markStep(num, state) {
 }
 
 /* ============================================================
-   SAVE CONTACT (from incoming call)
+   SAVE CONTACT
    ============================================================ */
 
 saveContactBtn.addEventListener('click', () => {
@@ -1753,10 +1727,6 @@ function sendMessage() {
   messageInput.value = '';
 }
 
-/**
- * Chat render — always wraps in .msg-wrap so replies/reactions stack.
- * meta: { id, replyPreview, replyTo, vanish, ts }
- */
 function addMessage(text, type, meta = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'msg-wrap ' + (type === 'sent' ? 'sent' : 'received');
@@ -2193,7 +2163,6 @@ toggleVideoBtn.addEventListener('click', async () => {
       toggleVideoBtn.classList.add('active');
       toggleVideoBtn.querySelector('span').textContent = 'Turn Off';
 
-      // Apply high bitrate once sender exists
       setTimeout(applyVideoBitrate, 300);
 
       if (dataChannel && dataChannel.readyState === 'open') {
@@ -2791,7 +2760,7 @@ function addGifMessage(data, direction) {
 }
 
 /* ============================================================
-   STICKERS (disabled by default — flip FEATURES.stickers when files exist)
+   STICKERS
    ============================================================ */
 
 const STICKER_DATA = {
@@ -2888,7 +2857,7 @@ function addStickerMessage(data, direction) {
 }
 
 /* ============================================================
-   SETUP v19 UI (wiring)
+   SETUP v19 UI
    ============================================================ */
 
 function setupV19UI() {
