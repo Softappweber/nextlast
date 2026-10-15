@@ -1,0 +1,7 @@
+{
+  "categories": ["reactions", "love", "funny", "sad", "celebrate", "animals"],
+  "items": [
+    { "cat": "reactions", "file": "thumbsup.gif", "tags": ["thumbsup", "yes", "ok"] },
+    { "cat": "love", "file": "heart.gif", "tags": ["heart", "love"] }
+  ]
+}
