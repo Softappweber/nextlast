@@ -293,7 +293,6 @@ const stickerGrid = $('stickerGrid');
 window.addEventListener('DOMContentLoaded', () => {
   // 1. UI setup (sync, fast)
   loadTheme();
-  loadContacts();
   setupMobileTabs();
   setupV19UI();
   setupContactsUI();
