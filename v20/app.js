@@ -303,10 +303,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     stickerPanel.style.display = '';
   }
 
-  ICE_CONFIG = await fetchIceConfig();
+  // CRITICAL: check ?call= BEFORE awaiting TURN.
+  // Otherwise the caller screen doesn't appear until TURN resolves.
   checkPublicLinkInURL();
 
-  console.log('SoloDS NextLast v19 — Round 1 loaded');
+  // Fetch ICE in the background — caller screen already shows.
+  fetchIceConfig().then(cfg => {
+    ICE_CONFIG = cfg;
+    console.log('[TURN] ready');
+  }).catch(e => {
+    console.warn('[TURN] failed, staying on fallback', e);
+  });
+
+  console.log('SoloDS NextLast v20 loaded');
 });
 
 async function fetchIceConfig() {
@@ -538,6 +547,19 @@ function checkPublicLinkInURL() {
     targetSlug = hash.substring(6);
   }
   if (targetSlug) {
+    // Normalize: lowercase, strip anything not a-z0-9
+    targetSlug = targetSlug.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!targetSlug) return;
+
+    // Force caller screen visible IMMEDIATELY, before any async work
+    homeScreen.classList.add('hidden');
+    landingScreen.classList.add('hidden');
+    connectingScreen.classList.add('hidden');
+    mainScreen.classList.add('hidden');
+    callerScreen.classList.remove('hidden');
+
+    // Then do the real enterCallerMode work (Peer creation etc.)
+    // Wait until ICE is likely ready OR proceed with fallback.
     enterCallerMode(targetSlug);
   }
 }
@@ -730,8 +752,13 @@ function showLanding() {
 /* ============================================================
    CALLER MODE
    ============================================================ */
-
 function enterCallerMode(targetSlug) {
+  targetSlug = String(targetSlug || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!targetSlug) {
+    console.warn('[caller] empty slug, aborting');
+    return;
+  }
+
   isCallerMode = true;
   callerTargetSlug = targetSlug;
   callerTargetName = targetSlug;
